@@ -1,65 +1,15 @@
 // FAKE data for development and tests only. No real people, customers, or wages.
 // Field names follow spec section 5 and will be refined in Phase 1.
 
-export type Role = "lead" | "bookkeeper" | "owner";
-export type JobType = "quoted" | "hourly";
-
-export interface Employee {
-  id: string;
-  name: string;
-  active: boolean;
-  qboEmployeeId: string | null;
-}
-
-/** Wages are effective-dated so a raise never changes past labor cost. */
-export interface Wage {
-  employeeId: string;
-  hourlyWage: number;
-  effectiveFrom: string; // YYYY-MM-DD
-}
-
-export interface UserLogin {
-  id: string;
-  employeeId: string;
-  role: Role;
-  /** Dev-only PIN. Real PINs are only ever stored hashed. */
-  devPin: string;
-}
-
-export interface WorkOrderLine {
-  description: string;
-  quantity: number;
-  isLabor: boolean;
-}
-
-export interface WorkOrder {
-  id: string;
-  qboId: string | null;
-  quoteNumber: string;
-  poNumber: string;
-  date: string;
-  status: "open" | "turned_in" | "approved" | "sent";
-  billTo: { company: string; contact: string; phone: string };
-  shipTo: { company: string; address: string; contact: string; phone: string };
-  notes: string;
-  lines: WorkOrderLine[];
-}
-
-export interface JobAssignment {
-  workOrderId: string;
-  leadUserId: string;
-  crewEmployeeIds: string[];
-  dates: string[];
-}
-
-export interface TimeEntry {
-  id: string;
-  workOrderId: string;
-  employeeId: string;
-  date: string;
-  hours: number;
-  enteredByUserId: string;
-}
+import type {
+  ChangeOrder,
+  Employee,
+  JobAssignment,
+  TimeEntry,
+  UserLogin,
+  Wage,
+  WorkOrder,
+} from "@/lib/types";
 
 export const employees: Employee[] = [
   { id: "emp-1", name: "Test Lead Alpha", active: true, qboEmployeeId: null },
@@ -185,4 +135,27 @@ export const timeEntries: TimeEntry[] = [
   { id: "te-7", workOrderId: "wo-1002", employeeId: "emp-5", date: "2026-11-03", hours: 6, enteredByUserId: "user-lead-b" },
   // After emp-3's raise on 2026-11-04.
   { id: "te-8", workOrderId: "wo-1001", employeeId: "emp-3", date: "2026-11-04", hours: 8, enteredByUserId: "user-lead-a" },
+];
+
+export const changeOrders: ChangeOrder[] = [
+  {
+    id: "co-1",
+    workOrderId: "wo-1001",
+    type: "quick",
+    hoursAdded: 2,
+    description: "Customer added two extra desks",
+    requestedByUserId: "user-lead-a",
+    status: "approved",
+    approvedByUserId: null,
+  },
+  {
+    id: "co-2",
+    workOrderId: "wo-1001",
+    type: "large",
+    hoursAdded: 10,
+    description: "Customer wants second floor done too",
+    requestedByUserId: "user-lead-a",
+    status: "pending",
+    approvedByUserId: null,
+  },
 ];

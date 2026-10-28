@@ -10,8 +10,8 @@ change orders, punch lists, photos, and (later) QuickBooks Online sync.
 
 | Phase | What | Status |
 |-------|------|--------|
-| 0 | Setup: repo, spec, fake data, tests | In progress |
-| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Not started |
+| 0 | Setup: repo, spec, fake data, tests | Done (accounts pending) |
+| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours and budget math done |
 | 2 | Documents, photos, punch lists, change orders | Not started |
 | 3 | Offline and sync | Not started |
 | 4 | QuickBooks sandbox | Not started |
