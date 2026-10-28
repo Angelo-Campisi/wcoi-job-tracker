@@ -9,6 +9,12 @@
   --error-fg: #b91c1c;
   --notice-bg: #fef3c7;
   --notice-fg: #78350f;
+  --good: #16a34a;
+  --good-text: #15803d;
+  --warn: #d97706;
+  --warn-text: #b45309;
+  --bad: #dc2626;
+  --bad-text: #b91c1c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,6 +29,12 @@
     --error-fg: #f87171;
     --notice-bg: #422006;
     --notice-fg: #fde68a;
+    --good: #22c55e;
+    --good-text: #4ade80;
+    --warn: #f59e0b;
+    --warn-text: #fbbf24;
+    --bad: #ef4444;
+    --bad-text: #f87171;
   }
 }
 

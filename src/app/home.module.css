@@ -1,3 +1,5 @@
+/* Shared 11-inch tablets: big text, big targets, strong contrast. */
+
 .page {
   min-height: 100dvh;
   padding: 24px 16px 48px;
@@ -41,8 +43,154 @@
   font-size: 2rem;
 }
 
-.placeholder {
-  margin-top: 12px;
+.section {
+  margin-top: 28px;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+}
+
+.empty,
+.more {
   font-size: 1.25rem;
   opacity: 0.75;
+  margin-top: 8px;
+}
+
+.cards {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+  gap: 16px;
+}
+
+.card {
+  height: 100%;
+  padding: 20px;
+  border-radius: 16px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.customer {
+  font-size: 1.375rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.typeQuoted,
+.typeHourly {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.typeQuoted {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.typeHourly {
+  border: 2px solid var(--foreground);
+}
+
+.address {
+  font-size: 1.25rem;
+}
+
+.meta,
+.dates {
+  font-size: 1.0625rem;
+  opacity: 0.8;
+}
+
+.dates {
+  font-weight: 600;
+  opacity: 1;
+}
+
+.status {
+  margin-left: 8px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--notice-bg);
+  color: var(--notice-fg);
+  font-weight: 700;
+}
+
+.budget {
+  margin-top: 8px;
+}
+
+.budgetText {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 1.125rem;
+  margin-bottom: 6px;
+}
+
+.bar {
+  height: 14px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.fill_good,
+.fill_warn,
+.fill_bad {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.fill_good {
+  background: var(--good);
+}
+
+.fill_warn {
+  background: var(--warn);
+}
+
+.fill_bad {
+  background: var(--bad);
+}
+
+.tone_good,
+.tone_warn,
+.tone_bad {
+  font-weight: 700;
+}
+
+.tone_good {
+  color: var(--good-text);
+}
+
+.tone_warn {
+  color: var(--warn-text);
+}
+
+.tone_bad {
+  color: var(--bad-text);
+}
+
+.pending {
+  margin-top: 6px;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--warn-text);
 }

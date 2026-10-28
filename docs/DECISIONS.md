@@ -36,8 +36,8 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - **One hours entry per employee, per job, per day.** A second entry for the same
   employee, job, and day is refused; the existing entry is edited instead. This stops
   hours being counted twice when two tablets sync. Two jobs on the same day are fine.
-- **PINs are 4 to 8 digits.** Five wrong tries locks that person out for 15 minutes.
-  The screen auto-locks after 5 minutes of no use. All three numbers are in settings.
+- **PINs are exactly 6 digits and unique** (changed from 4 to 8 digits; see "Sign-in
+  screen" below). The screen auto-locks after 5 minutes of no use (in settings).
 - **Only the owner can create, edit, or set the PIN of an owner account.** The
   bookkeeper manages leads and other bookkeepers.
 - **Leads can see crew names and each employee's total hours for a day** (all jobs),
@@ -50,10 +50,28 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 
 ## Sign-in screen (Phase 1, 2026-10-28) – to confirm with the owner
 
-- **People pick their name from a list**, then type their PIN. The list shows the
-  names of active leads, bookkeepers, and the owner to anyone who opens the app's
-  address. Nothing else (roles, jobs) is shown before sign-in.
+- **PIN only, no name list** (owner's choice). Each person's PIN is unique, so it
+  says who they are. To make guessing impractical on a public web address:
+  - PINs are exactly 6 digits (about 1 in 100,000 per guess with ~10 people).
+  - 5 wrong PINs on a tablet blocks that tablet for 15 minutes; other tablets keep
+    working. One internet address gets 20 wrong tries (shop Wi-Fi is shared).
+  - More than 30 wrong PINs in an hour across all tablets pauses PIN sign-in for
+    everyone until the hour passes. The 30 is in settings.
+  - Because PINs are unique, the office may be told "that PIN is already taken"
+    when setting one. That is expected.
 - **Auto-lock signs the person out** on that tablet and returns to the name list,
   with a note saying why. (Phase 3 must keep unsynced entries when this happens.)
 - **Offline sign-in (decision 2) comes in Phase 3** with the rest of offline mode.
   Until then, signing in needs a signal.
+
+## My jobs screen (Phase 1, 2026-10-28) – to confirm with the owner
+
+- **Jobs are grouped by the days they are scheduled**: Today, Upcoming, Past, and
+  (office only) Not scheduled. A job that ran earlier and has more days later counts
+  as upcoming. Leads see only the days they lead.
+- **"Customer" on a card is the Ship To company** (where the crew goes), falling back
+  to Bill To. Quoted jobs show hours used vs. budget hours; hourly jobs show hours
+  entered. No dollars on this screen for anyone.
+- **Today uses the company's time zone**, set by `COMPANY_TIME_ZONE`
+  (default `America/New_York` — confirm).
+- **Past jobs show the 20 most recent.** Search for older jobs can come later.
