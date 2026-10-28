@@ -2,25 +2,25 @@ import { describe, expect, it } from "vitest";
 import { addPinDigit, isIdle, isValidPinFormat, loginEmailFor, pinResultMessage, removePinDigit } from "./sign-in";
 
 describe("PIN format", () => {
-  it("accepts 4 to 8 digits", () => {
-    expect(isValidPinFormat("1111")).toBe(true);
-    expect(isValidPinFormat("12345678")).toBe(true);
+  it("accepts exactly 6 digits", () => {
+    expect(isValidPinFormat("111111")).toBe(true);
+    expect(isValidPinFormat("012345")).toBe(true);
   });
 
   it("refuses too short, too long, or non-digits", () => {
     expect(isValidPinFormat("")).toBe(false);
-    expect(isValidPinFormat("123")).toBe(false);
-    expect(isValidPinFormat("123456789")).toBe(false);
-    expect(isValidPinFormat("12a4")).toBe(false);
-    expect(isValidPinFormat(" 1234")).toBe(false);
+    expect(isValidPinFormat("1111")).toBe(false);
+    expect(isValidPinFormat("1234567")).toBe(false);
+    expect(isValidPinFormat("12a456")).toBe(false);
+    expect(isValidPinFormat(" 12345")).toBe(false);
   });
 });
 
 describe("keypad", () => {
-  it("adds digits up to 8", () => {
+  it("adds digits up to 6", () => {
     expect(addPinDigit("", "1")).toBe("1");
-    expect(addPinDigit("1234567", "8")).toBe("12345678");
-    expect(addPinDigit("12345678", "9")).toBe("12345678");
+    expect(addPinDigit("12345", "6")).toBe("123456");
+    expect(addPinDigit("123456", "7")).toBe("123456");
   });
 
   it("ignores anything that is not one digit", () => {
@@ -46,6 +46,7 @@ describe("messages", () => {
   it("has a message for every failure", () => {
     expect(pinResultMessage("wrong", 15)).toBeTruthy();
     expect(pinResultMessage("inactive", 15)).toBeTruthy();
+    expect(pinResultMessage("paused", 15)).toBeTruthy();
   });
 });
 

@@ -34,10 +34,10 @@ export const wages: Wage[] = [
 ];
 
 export const users: UserLogin[] = [
-  { id: "user-lead-a", employeeId: "emp-1", role: "lead", devPin: "1111" },
-  { id: "user-lead-b", employeeId: "emp-2", role: "lead", devPin: "2222" },
-  { id: "user-bookkeeper", employeeId: "emp-7", role: "bookkeeper", devPin: "7777" },
-  { id: "user-owner", employeeId: "emp-8", role: "owner", devPin: "8888" },
+  { id: "user-lead-a", employeeId: "emp-1", role: "lead", devPin: "111111" },
+  { id: "user-lead-b", employeeId: "emp-2", role: "lead", devPin: "222222" },
+  { id: "user-bookkeeper", employeeId: "emp-7", role: "bookkeeper", devPin: "777777" },
+  { id: "user-owner", employeeId: "emp-8", role: "owner", devPin: "888888" },
 ];
 
 export const workOrders: WorkOrder[] = [

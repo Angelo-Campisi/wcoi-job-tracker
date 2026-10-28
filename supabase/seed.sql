@@ -6,7 +6,7 @@
 --   app users     20000000-0000-4000-8000-0000000000aN
 --   work orders   30000000-0000-4000-8000-00000000NNNN   (NNNN = wo-NNNN)
 --
--- Dev PINs: lead A 1111, lead B 2222, bookkeeper 7777, owner 8888.
+-- Dev PINs: lead A 111111, lead B 222222, bookkeeper 777777, owner 888888.
 
 insert into public.employees (id, name, active) values
   ('10000000-0000-4000-8000-000000000001', 'Test Lead Alpha', true),
@@ -35,10 +35,10 @@ insert into public.app_users (id, employee_id, role) values
   ('20000000-0000-4000-8000-0000000000a8', '10000000-0000-4000-8000-000000000008', 'owner');
 
 insert into public.user_pins (user_id, pin_hash) values
-  ('20000000-0000-4000-8000-0000000000a1', extensions.crypt('1111', extensions.gen_salt('bf', 10))),
-  ('20000000-0000-4000-8000-0000000000a2', extensions.crypt('2222', extensions.gen_salt('bf', 10))),
-  ('20000000-0000-4000-8000-0000000000a7', extensions.crypt('7777', extensions.gen_salt('bf', 10))),
-  ('20000000-0000-4000-8000-0000000000a8', extensions.crypt('8888', extensions.gen_salt('bf', 10)));
+  ('20000000-0000-4000-8000-0000000000a1', extensions.crypt('111111', extensions.gen_salt('bf', 10))),
+  ('20000000-0000-4000-8000-0000000000a2', extensions.crypt('222222', extensions.gen_salt('bf', 10))),
+  ('20000000-0000-4000-8000-0000000000a7', extensions.crypt('777777', extensions.gen_salt('bf', 10))),
+  ('20000000-0000-4000-8000-0000000000a8', extensions.crypt('888888', extensions.gen_salt('bf', 10)));
 
 insert into public.work_orders (
   id, quote_number, po_number, order_date, status,

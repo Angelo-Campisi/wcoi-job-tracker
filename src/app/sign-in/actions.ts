@@ -1,5 +1,7 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -8,40 +10,42 @@ import { isValidPinFormat, loginEmailFor, pinResultMessage, type PinCheckResult 
 export type SignInState = { error: string | null };
 
 const SERVER_TROUBLE = "Sign-in isn't working right now. Check the tablet's signal and try again.";
+const DEVICE_COOKIE = "wcoi_device";
 
-// Name + PIN sign-in for shared tablets (spec section 4).
-// 1. The database checks the PIN and handles lockout (verify_user_pin).
+// PIN-only sign-in for shared tablets (spec section 4; owner's choice 2026-10-28).
+// 1. The database finds who the PIN belongs to, and counts wrong tries per tablet,
+//    per internet address, and system-wide (sign_in_with_pin).
 // 2. On success, the server opens a Supabase session for that person, creating
 //    their Supabase login the first time. Nothing about the PIN reaches the browser.
-export async function signIn(appUserId: string, pin: string): Promise<SignInState> {
-  if (typeof appUserId !== "string" || typeof pin !== "string" || !isValidPinFormat(pin)) {
-    return { error: "Enter your 4 to 8 digit PIN." };
+export async function signIn(pin: string): Promise<SignInState> {
+  if (typeof pin !== "string" || !isValidPinFormat(pin)) {
+    return { error: "Enter your 6 digit PIN." };
   }
 
   const admin = createAdminClient();
-
-  const { data: result, error: verifyError } = await admin.rpc("verify_user_pin", {
-    p_user_id: appUserId,
+  const { data, error: checkError } = await admin.rpc("sign_in_with_pin", {
     p_pin: pin,
+    p_device_key: await deviceKey(),
+    p_ip: await clientIp(),
   });
-  if (verifyError) {
-    // A badly formed id is just a failed sign-in; anything else is a server problem.
-    if (verifyError.code === "22P02") return { error: pinResultMessage("wrong", 0) };
-    console.error("verify_user_pin failed", verifyError.code);
+  if (checkError) {
+    console.error("sign_in_with_pin failed", checkError.code);
     return { error: SERVER_TROUBLE };
   }
+  const row = (Array.isArray(data) ? data[0] : data) as { result: PinCheckResult; user_id: string | null } | null;
+  if (!row) return { error: SERVER_TROUBLE };
 
-  if (result !== "ok") {
+  if (row.result !== "ok" || !row.user_id) {
     let lockoutMinutes = 15;
-    if (result === "locked") {
+    if (row.result === "locked") {
       const { data: settings } = await admin.from("settings").select("pin_lockout_minutes").single();
       lockoutMinutes = settings?.pin_lockout_minutes ?? lockoutMinutes;
     }
-    return { error: pinResultMessage(result as PinCheckResult, lockoutMinutes) };
+    return { error: pinResultMessage(row.result, lockoutMinutes) };
   }
 
   try {
-    const tokenHash = await oneTimeSignInToken(admin, appUserId);
+    const tokenHash = await oneTimeSignInToken(admin, row.user_id);
     // Trading the one-time token for a session sets the session cookies on this tablet.
     const supabase = await createClient();
     const { error: otpError } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
@@ -52,6 +56,28 @@ export async function signIn(appUserId: string, pin: string): Promise<SignInStat
   }
 
   redirect("/");
+}
+
+// A random id kept on the tablet, so wrong tries on one tablet don't lock the others.
+async function deviceKey(): Promise<string> {
+  const store = await cookies();
+  const existing = store.get(DEVICE_COOKIE)?.value;
+  if (existing && /^[0-9a-f-]{36}$/.test(existing)) return existing;
+  const id = randomUUID();
+  store.set(DEVICE_COOKIE, id, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365 * 5,
+  });
+  return id;
+}
+
+// The tablet's internet address, as reported by the host (Vercel sets these headers).
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  return h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 }
 
 type AdminClient = ReturnType<typeof createAdminClient>;

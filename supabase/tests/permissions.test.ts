@@ -41,7 +41,7 @@ describe("not signed in", () => {
   it("cannot call any app function", () =>
     inRollback(c, async () => {
       await actAs(c, "anon");
-      expect(await expectFailure(c, "select public.verify_user_pin($1, '1111')", [ids.leadA])).toMatch(
+      expect(await expectFailure(c, "select * from public.sign_in_with_pin('111111', 'd', 'ip')")).toMatch(
         /permission denied/,
       );
     }));
@@ -287,41 +287,92 @@ describe("change orders", () => {
 });
 
 describe("users and PINs", () => {
-  it("checks PINs and locks out after 5 wrong tries", () =>
+  const signIn = async (pin: string, device = "tablet-1", ip = "203.0.113.1") =>
+    (
+      await rows<{ result: string; user_id: string | null }>(
+        "select * from public.sign_in_with_pin($1, $2, $3)",
+        [pin, device, ip],
+      )
+    )[0];
+
+  it("a PIN alone says who is signing in", () =>
     inRollback(c, async () => {
       await actAs(c, "service_role");
-      const check = async (pin: string) =>
-        (await rows<{ r: string }>("select public.verify_user_pin($1, $2) as r", [ids.leadA, pin]))[0].r;
-      expect(await check("1111")).toBe("ok");
-      for (let i = 0; i < 4; i++) expect(await check("0000")).toBe("wrong");
-      expect(await check("0000")).toBe("locked");
-      // Even the right PIN is refused while locked.
-      expect(await check("1111")).toBe("locked");
+      expect(await signIn("111111")).toEqual({ result: "ok", user_id: ids.leadA });
+      expect(await signIn("888888")).toEqual({ result: "ok", user_id: ids.owner });
+      expect(await signIn("123456")).toEqual({ result: "wrong", user_id: null });
+      // Not 6 digits: never matches, and counts as a wrong try.
+      expect(await signIn("1111")).toEqual({ result: "wrong", user_id: null });
+    }));
+
+  it("locks a tablet after 5 wrong PINs, but not other tablets", () =>
+    inRollback(c, async () => {
+      await actAs(c, "service_role");
+      for (let i = 0; i < 4; i++) expect((await signIn("000000", "tablet-1")).result).toBe("wrong");
+      expect((await signIn("000000", "tablet-1")).result).toBe("locked");
+      // Even the right PIN is refused on that tablet while locked.
+      expect((await signIn("111111", "tablet-1")).result).toBe("locked");
+      // Another tablet on a different connection still works.
+      expect(await signIn("111111", "tablet-2", "198.51.100.7")).toEqual({ result: "ok", user_id: ids.leadA });
+    }));
+
+  it("locks an internet address that keeps guessing with new tablet ids", () =>
+    inRollback(c, async () => {
+      await actAs(c, "service_role");
+      for (let i = 0; i < 20; i++) await signIn("000000", `fake-${i}`, "192.0.2.9");
+      expect((await signIn("111111", "fresh-id", "192.0.2.9")).result).toBe("locked");
+    }));
+
+  it("pauses PIN sign-in everywhere after too many wrong PINs in an hour", () =>
+    inRollback(c, async () => {
+      await actAs(c, "service_role");
+      for (let i = 0; i < 30; i++) await signIn("000000", `d-${i}`, `10.0.0.${i}`);
+      expect((await signIn("111111", "new", "10.9.9.9")).result).toBe("paused");
+    }));
+
+  it("a turned-off person cannot sign in", () =>
+    inRollback(c, async () => {
+      await c.query("update public.app_users set active = false where id = $1", [ids.leadB]);
+      await actAs(c, "service_role");
+      expect(await signIn("222222")).toEqual({ result: "inactive", user_id: null });
     }));
 
   it("the app (signed-in users) cannot check PINs directly", () =>
     inRollback(c, async () => {
       await actAs(c, ids.owner);
-      expect(await expectFailure(c, "select public.verify_user_pin($1, '1111')", [ids.leadA])).toMatch(
+      expect(await expectFailure(c, "select * from public.sign_in_with_pin('111111', 'd', 'ip')")).toMatch(
         /permission denied/,
       );
+      expect(await expectFailure(c, "select * from private.sign_in_failures")).toMatch(/permission denied/);
     }));
 
   it("PINs can be set by the office; only the owner sets an owner PIN", () =>
     inRollback(c, async () => {
       await actAs(c, ids.leadA);
-      expect(await expectFailure(c, "select public.set_user_pin($1, '4321')", [ids.leadA])).toMatch(
+      expect(await expectFailure(c, "select public.set_user_pin($1, '432100')", [ids.leadA])).toMatch(
         /Only the bookkeeper or owner/,
       );
       await actAs(c, ids.bookkeeper);
-      await c.query("select public.set_user_pin($1, '4321')", [ids.leadA]);
-      expect(await expectFailure(c, "select public.set_user_pin($1, '4321')", [ids.owner])).toMatch(
+      await c.query("select public.set_user_pin($1, '432100')", [ids.leadA]);
+      expect(await expectFailure(c, "select public.set_user_pin($1, '432199')", [ids.owner])).toMatch(
         /Only the owner/,
       );
-      expect(await expectFailure(c, "select public.set_user_pin($1, '12')", [ids.leadA])).toMatch(/4 to 8 digits/);
+      expect(await expectFailure(c, "select public.set_user_pin($1, '1234')", [ids.leadA])).toMatch(
+        /exactly 6 digits/,
+      );
       await actAs(c, "service_role");
-      const [r] = await rows("select public.verify_user_pin($1, '4321') as r", [ids.leadA]);
-      expect(r).toEqual({ r: "ok" });
+      expect(await signIn("432100")).toEqual({ result: "ok", user_id: ids.leadA });
+      expect((await signIn("111111", "tablet-9", "198.51.100.1")).result).toBe("wrong");
+    }));
+
+  it("no two people can have the same PIN", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.owner);
+      expect(await expectFailure(c, "select public.set_user_pin($1, '222222')", [ids.leadA])).toMatch(
+        /already taken/,
+      );
+      // Setting your own current PIN again is fine.
+      await c.query("select public.set_user_pin($1, '111111')", [ids.leadA]);
     }));
 
   it("the bookkeeper cannot make anyone an owner", () =>
