@@ -19,3 +19,14 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - Q2: Whether pay rates are available through the API (expected: no; enter in admin screen).
 - Q3/Q4: Whether billable time entries (TimeActivity) can serve both invoicing and payroll.
 - Which QuickBooks item(s) count as labor lines.
+
+## Hours and budget rules (confirmed by the owner on 2026-10-28)
+
+- Hours per entry must be more than 0, at most 24, in half-hour steps (2, 2.5, 3, ...).
+- The daily flag triggers only **above** the threshold: exactly 8 hours is not flagged.
+- A change order of exactly the threshold is **quick**; anything above is **large**.
+  The starting threshold is 4 hours until the owner sets it.
+- "Over budget" means any hours above 100%. Exactly 100% shows as "at budget".
+- A quoted job with no budget hours but hours entered shows as over budget.
+- Labor cost is rounded to the cent per entry. If an employee has no wage on file
+  for a date, those hours are listed as "missing wage" and not guessed.
