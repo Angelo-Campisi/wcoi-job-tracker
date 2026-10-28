@@ -7,9 +7,9 @@ import {
   formatHours,
   groupJobs,
   shortDate,
-  todayIn,
   WORK_ORDER_STATUS_LABELS,
 } from "@/lib/my-jobs";
+import { companyToday } from "@/lib/company-time";
 import { requireSession } from "@/lib/session";
 import styles from "./home.module.css";
 
@@ -162,5 +162,5 @@ function JobCardView({ job, today, isStaff }: { job: JobCard; today: string; isS
 async function pickToday(searchParams: Promise<{ today?: string }>): Promise<string> {
   const { today } = await searchParams;
   if (process.env.NODE_ENV !== "production" && today && /^\d{4}-\d{2}-\d{2}$/.test(today)) return today;
-  return todayIn(process.env.COMPANY_TIME_ZONE || "America/Chicago");
+  return companyToday();
 }

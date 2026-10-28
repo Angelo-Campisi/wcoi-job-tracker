@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import AppHeader, { SignOutButton } from "@/components/AppHeader";
 import { formatDollars } from "@/lib/labor-cost";
-import { budgetStatusLabel, datesSummary, formatHours, shortDate, todayIn } from "@/lib/my-jobs";
+import { COMPANY_TIME_ZONE, companyToday } from "@/lib/company-time";
+import { budgetStatusLabel, datesSummary, formatHours, shortDate } from "@/lib/my-jobs";
 import { requireSession } from "@/lib/session";
 import { loadWorkOrder, type WorkOrderDetail } from "@/lib/work-order-data";
 import { statusSteps, telHref } from "@/lib/work-order-view";
@@ -11,7 +13,6 @@ import styles from "./work-order.module.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Work order · WCOI Job Tracker" };
 
-const TIME_ZONE = process.env.COMPANY_TIME_ZONE || "America/Chicago";
 
 // Work order screen (spec 6.2): everything about one job in one place.
 // What each person sees is decided by the database: leads only open their own
@@ -33,7 +34,7 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
   if (!wo) notFound();
 
   const isStaff = me.role !== "lead";
-  const today = todayIn(TIME_ZONE);
+  const today = companyToday();
 
   return (
     <main className={styles.page}>
@@ -69,13 +70,22 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
       <Budget wo={wo} isStaff={isStaff} />
 
       <Section title="Hours">
+        {isStaff || wo.status === "open" ? (
+          <Link href={`/jobs/${wo.id}/hours`} className={styles.enterHours}>
+            Enter hours
+          </Link>
+        ) : (
+          <p className={styles.lockedNote}>Turned in: hours are locked. Ask the office if something needs fixing.</p>
+        )}
         {wo.hoursDays.length === 0 ? (
           <p className={styles.muted}>No hours entered yet.</p>
         ) : (
           wo.hoursDays.map((day) => (
             <div key={day.date} className={styles.day}>
               <h3 className={styles.dayTitle}>
-                <span>{shortDate(day.date)}</span>
+                <Link href={`/jobs/${wo.id}/hours?date=${day.date}`} className={styles.dayLink}>
+                  {shortDate(day.date)}
+                </Link>
                 <span>{formatHours(day.total)} hrs</span>
               </h3>
               <ul className={styles.rows}>
@@ -294,7 +304,7 @@ function Detail({ label, value }: { label: string; value: string }) {
 
 function formatDateTime(iso: string): string {
   return new Intl.DateTimeFormat("en-US", {
-    timeZone: TIME_ZONE,
+    timeZone: COMPANY_TIME_ZONE,
     month: "short",
     day: "numeric",
     hour: "numeric",

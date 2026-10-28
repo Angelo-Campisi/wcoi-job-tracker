@@ -134,7 +134,7 @@ describe("entering hours", () => {
     inRollback(c, async () => {
       await actAs(c, ids.leadA);
       const [entry] = await rows<{ entered_by: string; version: number }>(newEntry, [
-        ids.wo1001, ids.emp(5), "2026-11-04", 6.5,
+        ids.wo1001, ids.emp(3), "2026-11-05", 6.5,
       ]);
       expect(entry.entered_by).toBe(ids.leadA);
       expect(entry.version).toBe(1);
@@ -145,8 +145,8 @@ describe("entering hours", () => {
       await actAs(c, ids.leadA);
       const [entry] = await rows<{ entered_by: string }>(
         `insert into public.time_entries (work_order_id, employee_id, work_date, hours, entered_by)
-         values ($1, $2, '2026-11-04', 4, $3) returning entered_by`,
-        [ids.wo1001, ids.emp(5), ids.owner],
+         values ($1, $2, '2026-11-05', 4, $3) returning entered_by`,
+        [ids.wo1001, ids.emp(3), ids.owner],
       );
       expect(entry.entered_by).toBe(ids.leadA);
     }));
@@ -165,11 +165,11 @@ describe("entering hours", () => {
     inRollback(c, async () => {
       await actAs(c, ids.leadA);
       for (const bad of [0, -1, 24.5, 2.25]) {
-        expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(5), "2026-11-05", bad])).toMatch(
+        expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(3), "2026-11-05", bad])).toMatch(
           /check constraint|numeric field overflow/,
         );
       }
-      expect(await rows(newEntry, [ids.wo1001, ids.emp(5), "2026-11-05", 24])).toHaveLength(1);
+      expect(await rows(newEntry, [ids.wo1001, ids.emp(3), "2026-11-05", 24])).toHaveLength(1);
     }));
 
   it("the same employee cannot be entered twice for one job and day", () =>
@@ -200,6 +200,84 @@ describe("entering hours", () => {
       );
       expect(Number(r.hours)).toBe(9);
     }));
+
+  it("hours by day across all jobs for a date range, hours only", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      const r = await rows<{ employee_id: string; work_date: string; hours: string }>(
+        `select employee_id, to_char(work_date, 'YYYY-MM-DD') as work_date, hours
+         from public.employee_hours_between($1, '2026-11-02', '2026-11-08') order by 2`,
+        [[ids.emp(4)]],
+      );
+      expect(r.map((x) => [x.work_date, Number(x.hours)])).toEqual([
+        ["2026-11-02", 7.5],
+        ["2026-11-03", 9],
+      ]);
+      expect(
+        await expectFailure(c, "select * from public.employee_hours_between($1, '2026-01-01', '2026-12-31')", [
+          [ids.emp(4)],
+        ]),
+      ).toMatch(/0 to 62 days/);
+      await actAs(c, "anon");
+      expect(
+        await expectFailure(c, "select * from public.employee_hours_between($1, '2026-11-02', '2026-11-08')", [
+          [ids.emp(4)],
+        ]),
+      ).toMatch(/permission denied/);
+    }));
+});
+
+describe("crew", () => {
+  it("hours can only be entered for someone on the job's crew", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(5), "2026-11-05", 4])).toMatch(
+        /Add this person to the crew/,
+      );
+      await c.query("insert into public.job_crew (work_order_id, employee_id) values ($1, $2)", [
+        ids.wo1001, ids.emp(5),
+      ]);
+      expect(await rows(newEntry, [ids.wo1001, ids.emp(5), "2026-11-05", 4])).toHaveLength(1);
+    }));
+
+  it("a lead can remove a crew member with no hours, but not one with hours", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      await c.query("insert into public.job_crew (work_order_id, employee_id) values ($1, $2)", [
+        ids.wo1001, ids.emp(5),
+      ]);
+      expect(
+        await count("delete from public.job_crew where work_order_id = $1 and employee_id = $2", [
+          ids.wo1001, ids.emp(5),
+        ]),
+      ).toBe(1);
+      expect(
+        await expectFailure(c, "delete from public.job_crew where work_order_id = $1 and employee_id = $2", [
+          ids.wo1001, ids.emp(3),
+        ]),
+      ).toMatch(/Remove their hours first/);
+    }));
+
+  it("only active employees can be added to a crew", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      // emp-6 (Test Installer Foxtrot) is inactive.
+      expect(
+        await expectFailure(c, "insert into public.job_crew (work_order_id, employee_id) values ($1, $2)", [
+          ids.wo1001, ids.emp(6),
+        ]),
+      ).toMatch(/Only active employees/);
+    }));
+
+  it("a lead cannot change the crew on another lead's job", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      expect(
+        await expectFailure(c, "insert into public.job_crew (work_order_id, employee_id) values ($1, $2)", [
+          ids.wo1002, ids.emp(3),
+        ]),
+      ).toMatch(/row-level security/);
+    }));
 });
 
 describe("turn-in and locking", () => {
@@ -214,7 +292,7 @@ describe("turn-in and locking", () => {
 
       // Lead is locked out.
       expect(await count("update public.time_entries set hours = 1 where work_order_id = $1", [ids.wo1001])).toBe(0);
-      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(5), "2026-11-05", 2])).toMatch(
+      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(3), "2026-11-05", 2])).toMatch(
         /row-level security/,
       );
       expect(

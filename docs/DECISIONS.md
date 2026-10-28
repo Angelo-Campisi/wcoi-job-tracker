@@ -78,8 +78,8 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 
 ## Work order screen (Phase 1, 2026-10-28) – to confirm with the owner
 
-- **Read-only for now.** Hours entry, change order forms, and turn-in are the next
-  pieces and will be added to this screen.
+- **Hours entry is a separate screen** opened from the work order. Change order
+  forms and turn-in come next.
 - **Order on the screen** follows what a lead needs on site: status, special
   instructions, on-site contact (big Call button), budget, hours, change orders,
   line items, job details, turn-in.
@@ -88,3 +88,17 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
   all jobs that day is over the limit (default 8), without saying which other job.
 - **Labor cost** (dollars) shows only for the bookkeeper and owner, with a note when
   an hours entry has no wage on file.
+
+## Hours entry (Phase 1, 2026-10-28) – to confirm with the owner
+
+- **One day at a time.** The lead picks the day (today by default, quick buttons
+  for the job's scheduled days) and sets hours for each crew member with − / +.
+  The first + gives 8 hours; each tap after that is half an hour.
+- **No hours for future days.** Past days are allowed (e.g. catching up on Monday).
+- **Hours only for people on the crew** (enforced by the database). A crew member
+  who has hours on the job can't be removed until their hours are cleared. Only
+  active employees can be added.
+- **Over 8 hours in a day across all jobs** shows a warning and asks "Hours are
+  correct, save" before saving. It never blocks. Checked again by the server.
+- **Week totals** (Monday–Sunday, all jobs) show under each person, for payroll.
+- Offline entry (Phase 3) is not in yet: saving needs a signal.

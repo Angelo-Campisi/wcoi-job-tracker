@@ -11,7 +11,7 @@ change orders, punch lists, photos, and (later) QuickBooks Online sync.
 | Phase | What | Status |
 |-------|------|--------|
 | 0 | Setup: repo, spec, fake data, tests | Done (accounts pending) |
-| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, My Jobs and Work Order screens done |
+| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, My Jobs, Work Order, and hours entry done |
 | 2 | Documents, photos, punch lists, change orders | Not started |
 | 3 | Offline and sync | Not started |
 | 4 | QuickBooks sandbox | Not started |
@@ -85,7 +85,17 @@ Tap a job to open it (`src/app/jobs/[id]/`): status, special instructions, on-si
 contact with a Call button, budget or hours total, hours by day (with the daily
 hours flag across all jobs), change orders, line items, and turn-in. Labor cost in
 dollars shows only for the bookkeeper and owner. Leads get "not found" for jobs
-that aren't theirs. Entering hours, change order forms, and turn-in come next.
+that aren't theirs. Change order forms and turn-in come next.
+
+## Hours entry
+
+From a work order, tap **Enter hours** (`src/app/jobs/[id]/hours/`). One day at a
+time, each crew member gets big − / + buttons: + starts at 8, each tap is half an
+hour. Leads can add people to the crew and remove anyone with no hours on the job.
+If someone goes over 8 hours in a day across all jobs, the lead is asked to confirm
+before saving (it never blocks). Each row also shows that person's other-job hours
+that day and their Monday–Sunday week total. No hours for future days. After
+turn-in, leads can't change hours; the bookkeeper and owner can, and it's logged.
 
 **Run the database tests locally** against any throwaway Postgres server
 (the test creates and replaces a database named `wcoi_db_test`):
