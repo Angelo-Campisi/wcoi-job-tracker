@@ -11,7 +11,7 @@ change orders, punch lists, photos, and (later) QuickBooks Online sync.
 | Phase | What | Status |
 |-------|------|--------|
 | 0 | Setup: repo, spec, fake data, tests | Done (accounts pending) |
-| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math and database done |
+| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, and sign-in screen done |
 | 2 | Documents, photos, punch lists, change orders | Not started |
 | 3 | Offline and sync | Not started |
 | 4 | QuickBooks sandbox | Not started |
@@ -58,6 +58,17 @@ npx supabase db push --include-seed
 ```
 
 Leave out `--include-seed` once the project holds real data.
+
+4. Turn off public sign-ups (Authentication → Sign In / Providers → "Allow new users
+   to sign up" off). The app creates each person's login itself at their first
+   PIN sign-in; nobody else should be able to create one.
+
+## Sign-in
+
+Shared tablets: pick your name, enter your PIN (`src/app/sign-in/`). The server
+checks the PIN in the database (`verify_user_pin`, with lockout), then opens a
+Supabase session for that person. The PIN never goes anywhere but the server.
+The screen locks after the idle time in settings (`src/components/InactivityLock.tsx`).
 
 **Run the database tests locally** against any throwaway Postgres server
 (the test creates and replaces a database named `wcoi_db_test`):

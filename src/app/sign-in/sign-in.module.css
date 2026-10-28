@@ -1,0 +1,151 @@
+/* Built for shared 11-inch tablets, gloved or dusty hands, and older eyes:
+   big text, big targets, strong contrast. */
+
+.page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 48px;
+  gap: 16px;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 1.375rem;
+}
+
+.notice {
+  max-width: 640px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: var(--notice-bg);
+  color: var(--notice-fg);
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+.error {
+  min-height: 1.75rem;
+  color: var(--error-fg);
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  max-width: 640px;
+}
+
+.names {
+  list-style: none;
+  width: 100%;
+  max-width: 720px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.nameButton {
+  width: 100%;
+  min-height: 88px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nameButton:active,
+.key:active,
+.keySmall:active {
+  background: var(--pressed);
+}
+
+.back {
+  align-self: flex-start;
+  min-height: 56px;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pinForm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.hiddenInput {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.dots {
+  display: flex;
+  gap: 18px;
+  min-height: 28px;
+}
+
+.dot,
+.dotFilled {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid var(--foreground);
+}
+
+.dotFilled {
+  background: var(--foreground);
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 96px);
+  gap: 16px;
+}
+
+.key,
+.keySmall,
+.keyGo {
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 2.25rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.keySmall {
+  font-size: 1.75rem;
+}
+
+.keyGo {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-size: 1.75rem;
+}
+
+.key:disabled,
+.keySmall:disabled,
+.keyGo:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

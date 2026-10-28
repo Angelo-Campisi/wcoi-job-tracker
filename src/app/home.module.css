@@ -1,0 +1,48 @@
+.page {
+  min-height: 100dvh;
+  padding: 24px 16px 48px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--line);
+}
+
+.who {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.role {
+  font-size: 1.125rem;
+  opacity: 0.75;
+}
+
+.signOut {
+  min-height: 56px;
+  padding: 8px 24px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.title {
+  margin-top: 24px;
+  font-size: 2rem;
+}
+
+.placeholder {
+  margin-top: 12px;
+  font-size: 1.25rem;
+  opacity: 0.75;
+}

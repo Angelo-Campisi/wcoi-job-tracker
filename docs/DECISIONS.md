@@ -47,3 +47,13 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
   owner approves or denies large ones. Once submitted, a change order's hours cannot
   be rewritten.
 - Punch lists, photos, and documents get their tables in Phase 2.
+
+## Sign-in screen (Phase 1, 2026-10-28) – to confirm with the owner
+
+- **People pick their name from a list**, then type their PIN. The list shows the
+  names of active leads, bookkeepers, and the owner to anyone who opens the app's
+  address. Nothing else (roles, jobs) is shown before sign-in.
+- **Auto-lock signs the person out** on that tablet and returns to the name list,
+  with a note saying why. (Phase 3 must keep unsynced entries when this happens.)
+- **Offline sign-in (decision 2) comes in Phase 3** with the rest of offline mode.
+  Until then, signing in needs a signal.
