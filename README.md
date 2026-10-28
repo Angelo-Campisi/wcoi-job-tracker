@@ -11,7 +11,7 @@ change orders, punch lists, photos, and (later) QuickBooks Online sync.
 | Phase | What | Status |
 |-------|------|--------|
 | 0 | Setup: repo, spec, fake data, tests | Done (accounts pending) |
-| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, and My Jobs screen done |
+| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, My Jobs and Work Order screens done |
 | 2 | Documents, photos, punch lists, change orders | Not started |
 | 3 | Offline and sync | Not started |
 | 4 | QuickBooks sandbox | Not started |
@@ -76,8 +76,16 @@ The screen locks after the idle time in settings (`src/components/InactivityLock
 
 The home screen (`src/app/page.tsx`): today's jobs first, then upcoming, then past.
 Leads see only their assigned jobs; the bookkeeper and owner see all jobs. "Today"
-uses `COMPANY_TIME_ZONE` (default `America/New_York`). In development, add
+uses `COMPANY_TIME_ZONE` (default `America/Chicago`, Omaha). In development, add
 `?today=2026-11-03` to the address to see the fake November jobs as "today".
+
+## Work order screen
+
+Tap a job to open it (`src/app/jobs/[id]/`): status, special instructions, on-site
+contact with a Call button, budget or hours total, hours by day (with the daily
+hours flag across all jobs), change orders, line items, and turn-in. Labor cost in
+dollars shows only for the bookkeeper and owner. Leads get "not found" for jobs
+that aren't theirs. Entering hours, change order forms, and turn-in come next.
 
 **Run the database tests locally** against any throwaway Postgres server
 (the test creates and replaces a database named `wcoi_db_test`):

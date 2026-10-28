@@ -69,9 +69,22 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - **Jobs are grouped by the days they are scheduled**: Today, Upcoming, Past, and
   (office only) Not scheduled. A job that ran earlier and has more days later counts
   as upcoming. Leads see only the days they lead.
-- **"Customer" on a card is the Ship To company** (where the crew goes), falling back
+- **"Customer" on a card is the Ship To company** (confirmed by the owner) (where the crew goes), falling back
   to Bill To. Quoted jobs show hours used vs. budget hours; hourly jobs show hours
   entered. No dollars on this screen for anyone.
 - **Today uses the company's time zone**, set by `COMPANY_TIME_ZONE`
-  (default `America/New_York` — confirm).
-- **Past jobs show the 20 most recent.** Search for older jobs can come later.
+  (default `America/Chicago`: the company is in Omaha). Confirmed by the owner.
+- **Past jobs show the 20 most recent.** Search for older jobs can come later. Confirmed by the owner.
+
+## Work order screen (Phase 1, 2026-10-28) – to confirm with the owner
+
+- **Read-only for now.** Hours entry, change order forms, and turn-in are the next
+  pieces and will be added to this screen.
+- **Order on the screen** follows what a lead needs on site: status, special
+  instructions, on-site contact (big Call button), budget, hours, change orders,
+  line items, job details, turn-in.
+- **"Directions" opens Apple Maps** with the ship-to address (the tablets are iPads).
+- **Daily hours flag** is shown next to a person's hours when their total across
+  all jobs that day is over the limit (default 8), without saying which other job.
+- **Labor cost** (dollars) shows only for the bookkeeper and owner, with a note when
+  an hours entry has no wage on file.

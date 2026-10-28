@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
-import InactivityLock from "@/components/InactivityLock";
-import { loadJobCards, loadMe, type JobCard } from "@/lib/jobs-data";
+import Link from "next/link";
+import AppHeader, { SignOutButton } from "@/components/AppHeader";
+import { loadJobCards, type JobCard } from "@/lib/jobs-data";
 import {
   budgetStatusLabel,
   datesSummary,
@@ -10,27 +10,17 @@ import {
   todayIn,
   WORK_ORDER_STATUS_LABELS,
 } from "@/lib/my-jobs";
-import { createClient } from "@/lib/supabase/server";
-import { signOut } from "./sign-in/actions";
+import { requireSession } from "@/lib/session";
 import styles from "./home.module.css";
 
 export const dynamic = "force-dynamic";
 
-const ROLE_LABELS = { lead: "Job lead", bookkeeper: "Bookkeeper", owner: "Owner" } as const;
 const PAST_JOBS_SHOWN = 20;
 
 // "My jobs" (spec 6.1): today's jobs first, then upcoming and past.
 // Leads see only their assigned jobs; the bookkeeper and owner see all jobs.
 export default async function MyJobs({ searchParams }: { searchParams: Promise<{ today?: string }> }) {
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  const authUserId = claims?.claims.sub;
-  if (!authUserId) redirect("/sign-in");
-
-  const [me, { data: settings }] = await Promise.all([
-    loadMe(supabase, authUserId),
-    supabase.from("settings").select("inactivity_lock_minutes").maybeSingle(),
-  ]);
+  const { supabase, me, lockMinutes } = await requireSession();
 
   // A login with no active app user (e.g. turned off by the office).
   if (!me) {
@@ -51,14 +41,7 @@ export default async function MyJobs({ searchParams }: { searchParams: Promise<{
 
   return (
     <main className={styles.page}>
-      <InactivityLock lockMinutes={settings?.inactivity_lock_minutes ?? 5} />
-      <header className={styles.header}>
-        <div>
-          <p className={styles.who}>{me.name}</p>
-          <p className={styles.role}>{ROLE_LABELS[me.role]}</p>
-        </div>
-        <SignOutButton />
-      </header>
+      <AppHeader me={me} lockMinutes={lockMinutes} />
 
       <h1 className={styles.title}>{isStaff ? "All jobs" : "My jobs"}</h1>
 
@@ -123,7 +106,7 @@ function JobCardView({ job, today, isStaff }: { job: JobCard; today: string; isS
   const status = job.budget ? budgetStatusLabel(job.budget.status) : null;
   const percent = job.budget?.percentUsed ?? (job.budget && job.hoursUsed > 0 ? 100 : 0);
   return (
-    <article className={styles.card}>
+    <Link href={`/jobs/${job.id}`} className={styles.card}>
       <div className={styles.cardTop}>
         <h3 className={styles.customer}>{job.customer || "No customer name"}</h3>
         <span className={job.jobType === "quoted" ? styles.typeQuoted : styles.typeHourly}>
@@ -170,7 +153,7 @@ function JobCardView({ job, today, isStaff }: { job: JobCard; today: string; isS
             : `${job.pendingChangeOrders} change orders waiting for owner approval`}
         </p>
       )}
-    </article>
+    </Link>
   );
 }
 
@@ -179,20 +162,5 @@ function JobCardView({ job, today, isStaff }: { job: JobCard; today: string; isS
 async function pickToday(searchParams: Promise<{ today?: string }>): Promise<string> {
   const { today } = await searchParams;
   if (process.env.NODE_ENV !== "production" && today && /^\d{4}-\d{2}-\d{2}$/.test(today)) return today;
-  return todayIn(process.env.COMPANY_TIME_ZONE || "America/New_York");
-}
-
-function SignOutButton() {
-  return (
-    <form
-      action={async () => {
-        "use server";
-        await signOut();
-      }}
-    >
-      <button type="submit" className={styles.signOut}>
-        Sign out
-      </button>
-    </form>
-  );
+  return todayIn(process.env.COMPANY_TIME_ZONE || "America/Chicago");
 }

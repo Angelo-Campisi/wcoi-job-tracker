@@ -44,9 +44,9 @@ describe("grouping jobs", () => {
 
 describe("today's date", () => {
   it("uses the company's time zone, not the server's", () => {
-    // 2026-11-03 03:00 UTC is still the evening of Nov 2 in New York.
+    // 2026-11-03 03:00 UTC is still the evening of Nov 2 in Omaha.
     const now = new Date("2026-11-03T03:00:00Z");
-    expect(todayIn("America/New_York", now)).toBe("2026-11-02");
+    expect(todayIn("America/Chicago", now)).toBe("2026-11-02");
     expect(todayIn("UTC", now)).toBe("2026-11-03");
   });
 });

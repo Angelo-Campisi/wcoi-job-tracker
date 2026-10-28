@@ -105,6 +105,6 @@ export async function loadJobCards(supabase: Supabase, me: Me): Promise<JobCard[
 }
 
 /** Supabase returns a joined row as an object or a one-item list depending on the link; accept both. */
-function one<T>(value: T | T[] | null | undefined): T | undefined {
+export function one<T>(value: T | T[] | null | undefined): T | undefined {
   return Array.isArray(value) ? value[0] : (value ?? undefined);
 }
