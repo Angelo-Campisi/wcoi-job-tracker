@@ -44,8 +44,8 @@ describe("labor cost", () => {
 
   it("rounds to the cent", () => {
     const w: Wage[] = [{ employeeId: "emp-1", hourlyWage: 21.37, effectiveFrom: "2026-01-01" }];
-    // 7.33 × 21.37 = 156.6421 → $156.64
-    expect(costEntries([entry({ hours: 7.33 })], w).totalCents).toBe(15664);
+    // 7.5 × 21.37 = 160.275 → $160.28
+    expect(costEntries([entry({ hours: 7.5 })], w).totalCents).toBe(16028);
   });
 
   it("lists entries with no wage on file instead of guessing", () => {

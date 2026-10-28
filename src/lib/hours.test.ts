@@ -32,10 +32,10 @@ describe("sumHours", () => {
 
 describe("validateHours", () => {
   it("accepts normal values", () => {
-    for (const h of [0.25, 7.1, 8, 10.5, 24]) expect(validateHours(h)).toBeNull();
+    for (const h of [0.5, 2, 2.5, 7.5, 8, 10.5, 24]) expect(validateHours(h)).toBeNull();
   });
-  it("rejects zero, negative, over 24, too many decimals, and non-numbers", () => {
-    for (const h of [0, -1, 24.5, 1.234, Number.NaN, Infinity]) expect(validateHours(h)).not.toBeNull();
+  it("rejects zero, negative, over 24, non-half-hour steps, and non-numbers", () => {
+    for (const h of [0, -1, -0.5, 24.5, 0.25, 7.75, 7.1, 1.234, Number.NaN, Infinity]) expect(validateHours(h)).not.toBeNull();
   });
 });
 

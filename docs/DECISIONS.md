@@ -20,9 +20,9 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - Q3/Q4: Whether billable time entries (TimeActivity) can serve both invoicing and payroll.
 - Which QuickBooks item(s) count as labor lines.
 
-## Small rules chosen while writing the hours and budget math (please confirm)
+## Hours and budget rules (confirmed by the owner on 2026-10-28)
 
-- Hours per entry must be more than 0, at most 24, with at most 2 decimals (e.g. 7.25).
+- Hours per entry must be more than 0, at most 24, in half-hour steps (2, 2.5, 3, ...).
 - The daily flag triggers only **above** the threshold: exactly 8 hours is not flagged.
 - A change order of exactly the threshold is **quick**; anything above is **large**.
   The starting threshold is 4 hours until the owner sets it.

@@ -15,8 +15,8 @@ export function validateHours(hours: number): string | null {
   if (!Number.isFinite(hours)) return "Hours must be a number.";
   if (hours <= 0) return "Hours must be more than 0.";
   if (hours > 24) return "Hours cannot be more than 24 in one day.";
-  // Tolerance, because 7.1 * 100 is 710.0000000000001 in computer math.
-  if (Math.abs(hours * 100 - Math.round(hours * 100)) > 1e-6) return "Use at most 2 decimal places.";
+  // Half-hour steps only (owner decision): 2, 2.5, 3, ...
+  if (!Number.isInteger(hours * 2)) return "Use half-hour steps, like 2, 2.5, or 3.";
   return null;
 }
 
