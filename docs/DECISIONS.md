@@ -30,3 +30,20 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - A quoted job with no budget hours but hours entered shows as over budget.
 - Labor cost is rounded to the cent per entry. If an employee has no wage on file
   for a date, those hours are listed as "missing wage" and not guessed.
+
+## Database choices (Phase 1, 2026-10-28) – to confirm with the owner
+
+- **One hours entry per employee, per job, per day.** A second entry for the same
+  employee, job, and day is refused; the existing entry is edited instead. This stops
+  hours being counted twice when two tablets sync. Two jobs on the same day are fine.
+- **PINs are 4 to 8 digits.** Five wrong tries locks that person out for 15 minutes.
+  The screen auto-locks after 5 minutes of no use. All three numbers are in settings.
+- **Only the owner can create, edit, or set the PIN of an owner account.** The
+  bookkeeper manages leads and other bookkeepers.
+- **Leads can see crew names and each employee's total hours for a day** (all jobs),
+  so the daily 8-hour flag works when a crew member also worked another lead's job.
+  They never see wages, other leads' jobs, or which job those other hours were on.
+- **Quick change orders cannot be denied later**: they are approved on submit. The
+  owner approves or denies large ones. Once submitted, a change order's hours cannot
+  be rewritten.
+- Punch lists, photos, and documents get their tables in Phase 2.
