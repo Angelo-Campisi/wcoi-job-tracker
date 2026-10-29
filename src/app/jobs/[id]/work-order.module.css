@@ -386,3 +386,21 @@
   font-size: 1.25rem;
   font-weight: 700;
 }
+
+.signature {
+  margin-top: 12px;
+}
+
+.signature img {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  background: #ffffff;
+}
+
+.signature figcaption {
+  margin-top: 6px;
+  font-weight: 600;
+}

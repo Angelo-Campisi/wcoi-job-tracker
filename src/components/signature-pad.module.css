@@ -1,0 +1,28 @@
+.wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* White in both themes so the saved signature looks the same everywhere. */
+.pad {
+  display: block;
+  width: 100%;
+  height: 240px;
+  border-radius: 14px;
+  border: 3px solid var(--line);
+  background: #ffffff;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.line {
+  position: absolute;
+  left: 18px;
+  bottom: 38px;
+  right: 18px;
+  border-bottom: 2px solid #9ca3af;
+  color: #9ca3af;
+  font-size: 1.25rem;
+  line-height: 1;
+  pointer-events: none;
+}

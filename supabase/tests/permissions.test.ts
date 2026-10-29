@@ -31,6 +31,11 @@ async function today(): Promise<string> {
   return (await c.query("select private.company_today()::text as d")).rows[0].d;
 }
 
+// A tiny valid-looking PNG data URL standing in for a customer's signature.
+const SIGNATURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+const turnInSigned = "select * from public.turn_in_work_order($1, $2, $3, null)";
+const turnInNoSignature = "select * from public.turn_in_work_order($1, null, null, $2)";
+
 const newEntry = `insert into public.time_entries (work_order_id, employee_id, work_date, hours)
   values ($1, $2, $3, $4) returning *`;
 
@@ -333,8 +338,8 @@ describe("turn-in and locking", () => {
     inRollback(c, async () => {
       await actAs(c, ids.leadA);
       const [wo] = await rows<{ status: string; turned_in_by: string }>(
-        "select status, turned_in_by from public.turn_in_work_order($1, 'Sam Placeholder')",
-        [ids.wo1001],
+        "select status, turned_in_by from public.turn_in_work_order($1, 'Sam Placeholder', $2, null)",
+        [ids.wo1001, SIGNATURE],
       );
       expect(wo).toEqual({ status: "turned_in", turned_in_by: ids.leadA });
 
@@ -366,10 +371,66 @@ describe("turn-in and locking", () => {
   it("a job can only be turned in once, and only by its lead or the office", () =>
     inRollback(c, async () => {
       await actAs(c, ids.leadB);
-      expect(await expectFailure(c, "select public.turn_in_work_order($1)", [ids.wo1001])).toMatch(/Not allowed/);
+      expect(await expectFailure(c, turnInNoSignature, [ids.wo1001, "Customer left"])).toMatch(/Not allowed/);
       await actAs(c, ids.leadA);
-      await c.query("select public.turn_in_work_order($1)", [ids.wo1001]);
-      expect(await expectFailure(c, "select public.turn_in_work_order($1)", [ids.wo1001])).toMatch(/Only an open/);
+      await c.query(turnInNoSignature, [ids.wo1001, "Customer left"]);
+      expect(await expectFailure(c, turnInNoSignature, [ids.wo1001, "Again"])).toMatch(/already been turned in/);
+    }));
+
+  it("turn-in needs a signature with a name, or a reason there's no signature", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      expect(await expectFailure(c, "select public.turn_in_work_order($1, null, null, null)", [ids.wo1001])).toMatch(
+        /signature, or say why/,
+      );
+      expect(await expectFailure(c, "select public.turn_in_work_order($1, null, null, '  ')", [ids.wo1001])).toMatch(
+        /signature, or say why/,
+      );
+      expect(await expectFailure(c, turnInSigned, [ids.wo1001, " ", SIGNATURE])).toMatch(/name of the person signing/);
+      expect(await expectFailure(c, turnInSigned, [ids.wo1001, "Sam", "data:image/jpeg;base64,xx"])).toMatch(
+        /could not be read/,
+      );
+      // Nothing was turned in by the failed tries.
+      expect((await rows<{ status: string }>("select status from public.work_orders where id = $1", [ids.wo1001]))[0].status).toBe("open");
+    }));
+
+  it("the signature is saved with the turn-in and only seen by people on the job", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      const [wo] = await rows<{ customer_signed_name: string; turn_in_note: string | null }>(turnInSigned, [
+        ids.wo1001, "  Sam Placeholder ", SIGNATURE,
+      ]);
+      expect(wo).toMatchObject({ customer_signed_name: "Sam Placeholder", turn_in_note: null });
+      const [sig] = await rows<{ signed_name: string; captured_by: string }>(
+        "select signed_name, captured_by from public.work_order_signatures where work_order_id = $1",
+        [ids.wo1001],
+      );
+      expect(sig).toEqual({ signed_name: "Sam Placeholder", captured_by: ids.leadA });
+      await actAs(c, ids.owner);
+      expect(await count("select 1 from public.work_order_signatures where work_order_id = $1", [ids.wo1001])).toBe(1);
+      await actAs(c, ids.leadB);
+      expect(await count("select 1 from public.work_order_signatures where work_order_id = $1", [ids.wo1001])).toBe(0);
+    }));
+
+  it("a turn-in without a signature keeps the reason", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      const [wo] = await rows<{ customer_signed_name: string | null; turn_in_note: string }>(turnInNoSignature, [
+        ids.wo1001, "Customer had left for the day",
+      ]);
+      expect(wo).toMatchObject({ customer_signed_name: null, turn_in_note: "Customer had left for the day" });
+    }));
+
+  it("nobody can write signatures directly, only by turning in", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.owner);
+      expect(
+        await expectFailure(
+          c,
+          "insert into public.work_order_signatures (work_order_id, signed_name, image_png) values ($1, 'X', $2)",
+          [ids.wo1002, SIGNATURE],
+        ),
+      ).toMatch(/permission denied/);
     }));
 });
 
@@ -417,7 +478,7 @@ describe("change orders", () => {
       const insert = `insert into public.change_orders (work_order_id, hours_added, description) values ($1, 2, 'x')`;
       await actAs(c, ids.leadA);
       expect(await expectFailure(c, insert, [ids.wo1002])).toMatch(/row-level security/);
-      await c.query("select public.turn_in_work_order($1)", [ids.wo1001]);
+      await c.query(turnInNoSignature, [ids.wo1001, "Customer left"]);
       expect(await expectFailure(c, insert, [ids.wo1001])).toMatch(/row-level security/);
       // The office still can.
       await actAs(c, ids.bookkeeper);

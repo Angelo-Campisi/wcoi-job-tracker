@@ -120,3 +120,20 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - **After turn-in** only the office can add change orders.
 - **Email to the owner (decision 3) is not built yet.** It needs an email service;
   for now the in-app banner is the alert.
+
+## Turn-in (Phase 1, 2026-10-29) – to confirm with the owner
+
+- **Signature capture is in now** (the spec listed it for Phase 2), because turn-in
+  starts with the customer signing. The customer signs with a finger in a white box;
+  the on-site contact's name is filled in and can be changed.
+- **If the customer can't sign**, the lead must say why. The job is still turned in,
+  and the reason shows on the work order.
+- **What the customer sees:** the job, address, work done (labor lines and approved
+  changes), and for hourly jobs the hours by day and by person. Never budget or dollars.
+  Quoted jobs don't show hours to the customer.
+- **Warnings, not blocks:** no hours entered today, or change orders still waiting
+  for the owner. The lead confirms once more before the job locks.
+- **Signatures are saved in the database** with the turn-in, in one step. Photos and
+  documents (Phase 2) will use file storage.
+- **Not built yet:** undoing a turn-in (office "reopen"), and the bookkeeper review /
+  approval step (spec 6.5), which is the next Phase 1 piece.

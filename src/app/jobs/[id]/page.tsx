@@ -23,9 +23,9 @@ export default async function WorkOrderPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ co?: string }>;
+  searchParams: Promise<{ co?: string; turnedIn?: string }>;
 }) {
-  const [{ id }, { co: justSubmitted }] = await Promise.all([params, searchParams]);
+  const [{ id }, { co: justSubmitted, turnedIn: justTurnedIn }] = await Promise.all([params, searchParams]);
   const { supabase, me, lockMinutes } = await requireSession();
   if (!me) {
     return (
@@ -70,6 +70,11 @@ export default async function WorkOrderPage({
       {justSubmitted === "quick" && (
         <p className={styles.banner} role="status">
           Change order added{wo.budget ? ". The budget now includes it." : "."}
+        </p>
+      )}
+      {justTurnedIn === "1" && wo.status === "turned_in" && (
+        <p className={styles.banner} role="status">
+          Work order turned in. Hours are now locked for the job lead.
         </p>
       )}
       {justSubmitted === "large" && (
@@ -201,11 +206,30 @@ export default async function WorkOrderPage({
 
       <Section title="Turn-in">
         {wo.turnIn.at ? (
-          <p>
-            Turned in {formatDateTime(wo.turnIn.at)}
-            {wo.turnIn.by ? ` by ${wo.turnIn.by}` : ""}.
-            {wo.turnIn.signedName ? ` Signed by ${wo.turnIn.signedName}.` : ""}
-          </p>
+          <>
+            <p>
+              Turned in {formatDateTime(wo.turnIn.at)}
+              {wo.turnIn.by ? ` by ${wo.turnIn.by}` : ""}.
+            </p>
+            {wo.turnIn.signature ? (
+              <figure className={styles.signature}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- a saved data URL, not a file to optimize */}
+                <img src={wo.turnIn.signature} alt={`Signature of ${wo.turnIn.signedName ?? "the customer"}`} />
+                <figcaption>Signed by {wo.turnIn.signedName}</figcaption>
+              </figure>
+            ) : wo.turnIn.note ? (
+              <p className={styles.lockedNote}>No customer signature: {wo.turnIn.note}</p>
+            ) : (
+              wo.turnIn.signedName && <p>Signed by {wo.turnIn.signedName}.</p>
+            )}
+          </>
+        ) : canChange ? (
+          <>
+            <p className={styles.muted}>When the job is done, get the customer&apos;s signature and turn it in.</p>
+            <Link href={`/jobs/${wo.id}/turn-in`} className={styles.enterHours}>
+              Turn in work order
+            </Link>
+          </>
         ) : (
           <p className={styles.muted}>Not turned in yet.</p>
         )}

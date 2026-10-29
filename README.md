@@ -11,7 +11,7 @@ change orders, punch lists, photos, and (later) QuickBooks Online sync.
 | Phase | What | Status |
 |-------|------|--------|
 | 0 | Setup: repo, spec, fake data, tests | Done (accounts pending) |
-| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, My Jobs, Work Order, hours entry, and change orders done |
+| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, My Jobs, Work Order, hours entry, change orders, and turn-in done |
 | 2 | Documents, photos, punch lists, change orders | Not started |
 | 3 | Offline and sync | Not started |
 | 4 | QuickBooks sandbox | Not started |
@@ -85,7 +85,7 @@ Tap a job to open it (`src/app/jobs/[id]/`): status, special instructions, on-si
 contact with a Call button, budget or hours total, hours by day (with the daily
 hours flag across all jobs), change orders, line items, and turn-in. Labor cost in
 dollars shows only for the bookkeeper and owner. Leads get "not found" for jobs
-that aren't theirs. Turn-in comes next.
+that aren't theirs.
 
 ## Hours entry
 
@@ -119,3 +119,13 @@ owner's threshold (4 hours) is a quick change, added to the budget right away.
 Over it is a large change: it waits for the owner, who approves or denies it on the
 work order or on **Change orders waiting** (`/change-orders`, linked from a banner on
 All Jobs). Email alerts to the owner come later.
+
+## Turn-in
+
+On a work order, tap **Turn in work order** (`src/app/jobs/[id]/turn-in/`). The lead
+sees warnings first (no hours today, change orders still waiting), then turns the
+tablet to the customer: a job summary (work done; hours by day and person for hourly
+jobs; never budget or dollars) and a signature box. If the customer can't sign, the
+lead gives a reason instead. One more "Yes, turn it in" and the job locks: the lead
+can no longer change hours, crew, or change orders. The signature is stored in the
+database (`work_order_signatures`) in the same step as the turn-in.

@@ -42,7 +42,15 @@ export interface WorkOrderDetail {
     decidedAt: string | null;
     decidedBy: string | null;
   }[];
-  turnIn: { at: string | null; by: string | null; signedName: string | null };
+  turnIn: {
+    at: string | null;
+    by: string | null;
+    signedName: string | null;
+    /** Signature image (PNG data URL), when the customer signed. */
+    signature: string | null;
+    /** Why there's no signature, when the customer couldn't sign. */
+    note: string | null;
+  };
   /** Bookkeeper and owner only; always null for leads. */
   laborCost: LaborCostResult | null;
 }
@@ -61,7 +69,8 @@ export async function loadWorkOrder(supabase: Supabase, me: Me, id: string): Pro
         `id, quote_number, po_number, order_date, status, job_type_override, notes,
         bill_to_company, bill_to_contact, bill_to_phone,
         ship_to_company, ship_to_address, ship_to_contact, ship_to_phone,
-        turned_in_at, customer_signed_name,
+        turned_in_at, customer_signed_name, turn_in_note,
+        work_order_signatures (image_png),
         turned_in_user:app_users!work_orders_turned_in_by_fkey (employees (name)),
         work_order_lines (line_number, description, quantity, is_labor),
         job_assignments (lead_user_id, job_assignment_dates (work_date), app_users (employees (name))),
@@ -163,6 +172,8 @@ export async function loadWorkOrder(supabase: Supabase, me: Me, id: string): Pro
       at: row.turned_in_at,
       by: (one(one(row.turned_in_user)?.employees)?.name as string) ?? null,
       signedName: row.customer_signed_name,
+      signature: (one(row.work_order_signatures)?.image_png as string) ?? null,
+      note: row.turn_in_note,
     },
     laborCost,
   };
