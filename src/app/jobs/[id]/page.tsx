@@ -8,6 +8,7 @@ import { budgetStatusLabel, datesSummary, formatHours, shortDate } from "@/lib/m
 import { requireSession } from "@/lib/session";
 import { loadWorkOrder, type WorkOrderDetail } from "@/lib/work-order-data";
 import { statusSteps, telHref } from "@/lib/work-order-view";
+import DecideButtons from "./change-orders/DecideButtons";
 import styles from "./work-order.module.css";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +18,14 @@ export const metadata: Metadata = { title: "Work order · WCOI Job Tracker" };
 // Work order screen (spec 6.2): everything about one job in one place.
 // What each person sees is decided by the database: leads only open their own
 // jobs, and only the bookkeeper and owner get labor cost.
-export default async function WorkOrderPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function WorkOrderPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ co?: string }>;
+}) {
+  const [{ id }, { co: justSubmitted }] = await Promise.all([params, searchParams]);
   const { supabase, me, lockMinutes } = await requireSession();
   if (!me) {
     return (
@@ -34,6 +41,8 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
   if (!wo) notFound();
 
   const isStaff = me.role !== "lead";
+  const isOwner = me.role === "owner";
+  const canChange = isStaff || wo.status === "open";
   const today = companyToday();
 
   return (
@@ -58,6 +67,17 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
         <StatusSteps status={wo.status} />
       </section>
 
+      {justSubmitted === "quick" && (
+        <p className={styles.banner} role="status">
+          Change order added{wo.budget ? ". The budget now includes it." : "."}
+        </p>
+      )}
+      {justSubmitted === "large" && (
+        <p className={styles.banner} role="status">
+          Change order sent to the owner for approval. The budget changes once it&apos;s approved.
+        </p>
+      )}
+
       {wo.notes && (
         <section className={styles.notes} aria-label="Special instructions">
           <h2 className={styles.notesTitle}>Special instructions</h2>
@@ -72,7 +92,7 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
       <Section title="Hours">
         {isStaff || wo.status === "open" ? (
           <Link href={`/jobs/${wo.id}/hours`} className={styles.enterHours}>
-            Enter hours
+            {isStaff ? "Enter hours" : "Enter today's hours"}
           </Link>
         ) : (
           <p className={styles.lockedNote}>Turned in: hours are locked. Ask the office if something needs fixing.</p>
@@ -83,9 +103,13 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
           wo.hoursDays.map((day) => (
             <div key={day.date} className={styles.day}>
               <h3 className={styles.dayTitle}>
-                <Link href={`/jobs/${wo.id}/hours?date=${day.date}`} className={styles.dayLink}>
-                  {shortDate(day.date)}
-                </Link>
+                {isStaff ? (
+                  <Link href={`/jobs/${wo.id}/hours?date=${day.date}`} className={styles.dayLink}>
+                    {shortDate(day.date)}
+                  </Link>
+                ) : (
+                  <span>{shortDate(day.date)}</span>
+                )}
                 <span>{formatHours(day.total)} hrs</span>
               </h3>
               <ul className={styles.rows}>
@@ -110,6 +134,11 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
       </Section>
 
       <Section title="Change orders">
+        {canChange && (
+          <Link href={`/jobs/${wo.id}/change-orders/new`} className={styles.secondaryButton}>
+            New change order
+          </Link>
+        )}
         {wo.changeOrders.length === 0 ? (
           <p className={styles.muted}>No change orders.</p>
         ) : (
@@ -126,7 +155,17 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
                 <p className={styles.muted}>
                   {c.requestedBy ? `${c.requestedBy}, ` : ""}
                   {formatDateTime(c.requestedAt)}
+                  {c.type === "large" && c.decidedAt && (
+                    <>
+                      {" · "}
+                      {c.status === "approved" ? "Approved" : "Denied"}
+                      {c.decidedBy ? ` by ${c.decidedBy}` : ""} {formatDateTime(c.decidedAt)}
+                    </>
+                  )}
                 </p>
+                {isOwner && c.status === "pending" && (
+                  <DecideButtons changeOrderId={c.id} hoursLabel={`+${formatHours(c.hoursAdded)} hrs`} />
+                )}
               </li>
             ))}
           </ul>

@@ -92,35 +92,47 @@ export default function HoursForm({
 
   return (
     <>
-      <nav className={styles.dateNav} aria-label="Pick a day">
-        <Link className={styles.navButton} href={`?date=${prevDate}`} onClick={guard}>
-          ← Day before
-        </Link>
-        <p className={styles.dateLabel}>
-          {shortDate(day.date)}
-          {day.date === today && <span className={styles.todayTag}>Today</span>}
-        </p>
-        {nextDate ? (
-          <Link className={styles.navButton} href={`?date=${nextDate}`} onClick={guard}>
-            Day after →
-          </Link>
-        ) : (
-          <span className={styles.navSpacer} />
-        )}
-      </nav>
-      <div className={styles.quickDates}>
-        {quickDates.map((d) => (
-          <Link
-            key={d}
-            href={`?date=${d}`}
-            onClick={guard}
-            className={d === day.date ? styles.chipCurrent : styles.chip}
-            aria-current={d === day.date ? "date" : undefined}
-          >
-            {d === today ? "Today" : shortDate(d)}
-          </Link>
-        ))}
-      </div>
+      {day.canPickDay ? (
+        <>
+          <nav className={styles.dateNav} aria-label="Pick a day">
+            <Link className={styles.navButton} href={`?date=${prevDate}`} onClick={guard}>
+              ← Day before
+            </Link>
+            <p className={styles.dateLabel}>
+              {shortDate(day.date)}
+              {day.date === today && <span className={styles.todayTag}>Today</span>}
+            </p>
+            {nextDate ? (
+              <Link className={styles.navButton} href={`?date=${nextDate}`} onClick={guard}>
+                Day after →
+              </Link>
+            ) : (
+              <span className={styles.navSpacer} />
+            )}
+          </nav>
+          <div className={styles.quickDates}>
+            {quickDates.map((d) => (
+              <Link
+                key={d}
+                href={`?date=${d}`}
+                onClick={guard}
+                className={d === day.date ? styles.chipCurrent : styles.chip}
+                aria-current={d === day.date ? "date" : undefined}
+              >
+                {d === today ? "Today" : shortDate(d)}
+              </Link>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <p className={styles.dateLabelLeft}>
+            {shortDate(day.date)}
+            <span className={styles.todayTag}>Today</span>
+          </p>
+          <p className={styles.hint}>Job leads enter hours for today. Ask the office to change other days.</p>
+        </>
+      )}
 
       {locked && (
         <p className={styles.locked} role="status">

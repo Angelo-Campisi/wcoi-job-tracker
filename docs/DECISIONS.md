@@ -94,7 +94,12 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - **One day at a time.** The lead picks the day (today by default, quick buttons
   for the job's scheduled days) and sets hours for each crew member with − / +.
   The first + gives 8 hours; each tap after that is half an hour.
-- **No hours for future days.** Past days are allowed (e.g. catching up on Monday).
+- **Job leads enter hours for today only** (owner's decision, 2026-10-29). The
+  bookkeeper and owner can add or change hours on any past day; every change is
+  logged. Enforced in the database using the company time zone in settings.
+  Phase 3 note: an entry made offline late in the day must still count for that
+  day when it syncs the next morning.
+- **No hours for future days**, for anyone.
 - **Hours only for people on the crew** (enforced by the database). A crew member
   who has hours on the job can't be removed until their hours are cleared. Only
   active employees can be added.
@@ -102,3 +107,16 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
   correct, save" before saving. It never blocks. Checked again by the server.
 - **Week totals** (Monday–Sunday, all jobs) show under each person, for payroll.
 - Offline entry (Phase 3) is not in yet: saving needs a signal.
+
+## Change orders (Phase 1, 2026-10-29) – to confirm with the owner
+
+- **Form:** extra hours (half-hour steps, up to 500) and what changed. The form says
+  before sending whether it's quick or large.
+- **Quick (up to 4 hrs):** approved on submit and added to the budget. Can't be denied later.
+- **Large (over 4 hrs):** waits for the owner. The owner approves or denies on the
+  work order or on the "Change orders waiting" list. A banner on All Jobs shows how
+  many are waiting. The bookkeeper sees the list but can't decide.
+- **Hourly jobs:** change orders are kept as a record and don't change billing (decision 5).
+- **After turn-in** only the office can add change orders.
+- **Email to the owner (decision 3) is not built yet.** It needs an email service;
+  for now the in-app banner is the alert.

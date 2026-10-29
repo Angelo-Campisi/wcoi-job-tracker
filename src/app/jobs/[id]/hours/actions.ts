@@ -40,6 +40,13 @@ export async function saveDayHours(input: {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   if (!claims) return { ok: false, error: "You've been signed out. Sign in again." };
+  if (date !== companyToday()) {
+    // Job leads enter hours for today only; the database enforces this too.
+    const { data: me } = await supabase.from("app_users").select("role").eq("auth_user_id", claims.claims.sub).maybeSingle();
+    if (me?.role !== "bookkeeper" && me?.role !== "owner") {
+      return { ok: false, error: "Job leads can only enter hours for today. Ask the office to change other days." };
+    }
+  }
 
   // Fresh numbers: what's saved on this job for the day, and across all jobs.
   const [{ data: savedRows, error: savedError }, { data: names }] = await Promise.all([
@@ -135,7 +142,8 @@ async function threshold(supabase: Awaited<ReturnType<typeof createClient>>): Pr
 // becomes a plain message. Never shows raw database errors on the tablet.
 function friendly(error: { code?: string; message: string }): string {
   if (error.code === "42501") return LOCKED;
-  if (error.code === "23503" || error.code === "23514") return error.message;
+  // Rules written for people: crew rules, and "leads enter hours for today only".
+  if (error.code === "23503" || error.code === "23514" || error.code === "P0001") return error.message;
   console.error("Hours save failed", error.code);
   return TROUBLE;
 }

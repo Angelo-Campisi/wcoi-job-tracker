@@ -29,6 +29,8 @@ export interface HoursDay {
   status: WorkOrderStatus;
   /** Leads: only while the job is open. Office: always (every edit is logged). */
   canEdit: boolean;
+  /** Office only. Job leads enter hours for today only (owner's decision). */
+  canPickDay: boolean;
   date: string;
   week: { start: string; end: string };
   crew: CrewRow[];
@@ -98,6 +100,7 @@ export async function loadHoursDay(supabase: Supabase, me: Me, workOrderId: stri
     customer: row.ship_to_company || row.bill_to_company,
     status: row.status,
     canEdit: me.role !== "lead" || row.status === "open",
+    canPickDay: me.role !== "lead",
     date,
     week,
     crew,

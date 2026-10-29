@@ -40,6 +40,7 @@ export interface WorkOrderDetail {
     requestedBy: string;
     requestedAt: string;
     decidedAt: string | null;
+    decidedBy: string | null;
   }[];
   turnIn: { at: string | null; by: string | null; signedName: string | null };
   /** Bookkeeper and owner only; always null for leads. */
@@ -66,7 +67,8 @@ export async function loadWorkOrder(supabase: Supabase, me: Me, id: string): Pro
         job_assignments (lead_user_id, job_assignment_dates (work_date), app_users (employees (name))),
         job_crew (employees (name)),
         change_orders (id, type, status, hours_added, description, requested_at, decided_at,
-          requester:app_users!change_orders_requested_by_fkey (employees (name))),
+          requester:app_users!change_orders_requested_by_fkey (employees (name)),
+          decider:app_users!change_orders_decided_by_fkey (employees (name))),
         time_entries (id, employee_id, work_date, hours, entered_by, employees (name))`,
       )
       .eq("id", id)
@@ -154,6 +156,7 @@ export async function loadWorkOrder(supabase: Supabase, me: Me, id: string): Pro
         requestedBy: (one(one(c.requester)?.employees)?.name as string) ?? "",
         requestedAt: c.requested_at,
         decidedAt: c.decided_at,
+        decidedBy: (one(one(c.decider)?.employees)?.name as string) ?? null,
       }))
       .sort((a, b) => a.requestedAt.localeCompare(b.requestedAt)),
     turnIn: {

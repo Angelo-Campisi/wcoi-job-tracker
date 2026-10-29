@@ -168,3 +168,15 @@
   font-weight: 600;
   color: var(--warn-text);
 }
+
+.alert {
+  display: block;
+  margin-top: 16px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 2px solid var(--warn);
+  background: var(--notice-bg);
+  color: var(--notice-fg);
+  font-size: 1.25rem;
+  font-weight: 700;
+}

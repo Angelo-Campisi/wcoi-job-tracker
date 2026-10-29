@@ -21,11 +21,12 @@ export default async function HoursPage({
 }) {
   const [{ id }, { date: asked }] = await Promise.all([params, searchParams]);
   const today = companyToday();
-  // No hours for days that haven't happened yet.
-  if (asked && (!DATE_RE.test(asked) || asked > today)) redirect(`/jobs/${id}/hours`);
-  const date = asked ?? today;
-
   const { supabase, me, lockMinutes } = await requireSession();
+  // No hours for days that haven't happened yet; job leads only ever get today.
+  if (asked && (!DATE_RE.test(asked) || asked > today || (me?.role === "lead" && asked !== today))) {
+    redirect(`/jobs/${id}/hours`);
+  }
+  const date = asked ?? today;
   if (!me) {
     return (
       <main className={styles.page}>

@@ -26,6 +26,11 @@ async function count(sql: string, params: unknown[] = []): Promise<number> {
   return (await c.query(sql, params)).rowCount ?? 0;
 }
 
+/** The company's today, as the database sees it ("YYYY-MM-DD"). */
+async function today(): Promise<string> {
+  return (await c.query("select private.company_today()::text as d")).rows[0].d;
+}
+
 const newEntry = `insert into public.time_entries (work_order_id, employee_id, work_date, hours)
   values ($1, $2, $3, $4) returning *`;
 
@@ -132,9 +137,10 @@ describe("wages and secrets", () => {
 describe("entering hours", () => {
   it("a lead adds hours on their own open job, recorded under their name", () =>
     inRollback(c, async () => {
+      const day = await today();
       await actAs(c, ids.leadA);
       const [entry] = await rows<{ entered_by: string; version: number }>(newEntry, [
-        ids.wo1001, ids.emp(3), "2026-11-05", 6.5,
+        ids.wo1001, ids.emp(3), day, 6.5,
       ]);
       expect(entry.entered_by).toBe(ids.leadA);
       expect(entry.version).toBe(1);
@@ -142,52 +148,93 @@ describe("entering hours", () => {
 
   it("a lead cannot claim someone else entered the hours", () =>
     inRollback(c, async () => {
+      const day = await today();
       await actAs(c, ids.leadA);
       const [entry] = await rows<{ entered_by: string }>(
         `insert into public.time_entries (work_order_id, employee_id, work_date, hours, entered_by)
-         values ($1, $2, '2026-11-05', 4, $3) returning entered_by`,
-        [ids.wo1001, ids.emp(3), ids.owner],
+         values ($1, $2, $3, 4, $4) returning entered_by`,
+        [ids.wo1001, ids.emp(3), day, ids.owner],
       );
       expect(entry.entered_by).toBe(ids.leadA);
     }));
 
   it("a lead cannot add or change hours on another lead's job", () =>
     inRollback(c, async () => {
+      const day = await today();
       await actAs(c, ids.leadA);
-      expect(await expectFailure(c, newEntry, [ids.wo1002, ids.emp(5), "2026-11-03", 2])).toMatch(
-        /row-level security/,
-      );
+      expect(await expectFailure(c, newEntry, [ids.wo1002, ids.emp(5), day, 2])).toMatch(/row-level security/);
       expect(await count("update public.time_entries set hours = 1 where work_order_id = $1", [ids.wo1002])).toBe(0);
       expect(await count("delete from public.time_entries where work_order_id = $1", [ids.wo1002])).toBe(0);
     }));
 
   it("hours must be more than 0, at most 24, in half-hour steps", () =>
     inRollback(c, async () => {
+      const day = await today();
       await actAs(c, ids.leadA);
       for (const bad of [0, -1, 24.5, 2.25]) {
-        expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(3), "2026-11-05", bad])).toMatch(
+        expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(3), day, bad])).toMatch(
           /check constraint|numeric field overflow/,
         );
       }
-      expect(await rows(newEntry, [ids.wo1001, ids.emp(3), "2026-11-05", 24])).toHaveLength(1);
+      expect(await rows(newEntry, [ids.wo1001, ids.emp(3), day, 24])).toHaveLength(1);
     }));
 
   it("the same employee cannot be entered twice for one job and day", () =>
     inRollback(c, async () => {
+      const day = await today();
       await actAs(c, ids.leadA);
-      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(1), "2026-11-02", 2])).toMatch(
-        /duplicate key/,
-      );
+      await c.query(newEntry, [ids.wo1001, ids.emp(1), day, 2]);
+      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(1), day, 2])).toMatch(/duplicate key/);
     }));
 
   it("each edit raises the version and records who edited", () =>
     inRollback(c, async () => {
+      const day = await today();
       await actAs(c, ids.leadA);
+      const [created] = await rows<{ id: string }>(newEntry, [ids.wo1001, ids.emp(3), day, 8]);
       const [e] = await rows<{ version: number; updated_by: string }>(
         "update public.time_entries set hours = 7 where id = $1 returning version, updated_by",
-        ["50000000-0000-4000-8000-000000000001"],
+        [created.id],
       );
       expect(e).toEqual({ version: 2, updated_by: ids.leadA });
+    }));
+
+  it("a lead can only enter, change, or remove hours for today", () =>
+    inRollback(c, async () => {
+      const day = await today();
+      const [{ y }] = await rows<{ y: string }>("select ($1::date - 1)::text as y", [day]);
+      const pastEntry = "50000000-0000-4000-8000-000000000001"; // 2026-11-02, seed data
+      await actAs(c, ids.leadA);
+      const todayOnly = /only enter hours for today/;
+      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(3), y, 4])).toMatch(todayOnly);
+      expect(await expectFailure(c, "update public.time_entries set hours = 1 where id = $1", [pastEntry])).toMatch(todayOnly);
+      expect(await expectFailure(c, "delete from public.time_entries where id = $1", [pastEntry])).toMatch(todayOnly);
+      // Moving today's entry to another day is refused too.
+      const [created] = await rows<{ id: string }>(newEntry, [ids.wo1001, ids.emp(3), day, 8]);
+      expect(
+        await expectFailure(c, "update public.time_entries set work_date = $2 where id = $1", [created.id, y]),
+      ).toMatch(todayOnly);
+      expect(await count("delete from public.time_entries where id = $1", [created.id])).toBe(1);
+    }));
+
+  it("the bookkeeper and owner can change hours on any day", () =>
+    inRollback(c, async () => {
+      const day = await today();
+      const [{ y }] = await rows<{ y: string }>("select ($1::date - 3)::text as y", [day]);
+      await actAs(c, ids.bookkeeper);
+      expect(await count("update public.time_entries set hours = 6 where id = $1", ["50000000-0000-4000-8000-000000000001"])).toBe(1);
+      expect(await rows(newEntry, [ids.wo1001, ids.emp(3), y, 4])).toHaveLength(1);
+      await actAs(c, ids.owner);
+      expect(await count("delete from public.time_entries where id = $1", ["50000000-0000-4000-8000-000000000002"])).toBe(1);
+    }));
+
+  it("the company time zone must be a real one", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.owner);
+      expect(await expectFailure(c, "update public.settings set company_time_zone = 'Mars/Base'")).toMatch(
+        /Unknown time zone/,
+      );
+      expect(await count("update public.settings set company_time_zone = 'America/Denver'")).toBe(1);
     }));
 
   it("daily total across all jobs is available to the lead, hours only", () =>
@@ -230,14 +277,15 @@ describe("entering hours", () => {
 describe("crew", () => {
   it("hours can only be entered for someone on the job's crew", () =>
     inRollback(c, async () => {
+      const day = await today();
       await actAs(c, ids.leadA);
-      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(5), "2026-11-05", 4])).toMatch(
+      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(5), day, 4])).toMatch(
         /Add this person to the crew/,
       );
       await c.query("insert into public.job_crew (work_order_id, employee_id) values ($1, $2)", [
         ids.wo1001, ids.emp(5),
       ]);
-      expect(await rows(newEntry, [ids.wo1001, ids.emp(5), "2026-11-05", 4])).toHaveLength(1);
+      expect(await rows(newEntry, [ids.wo1001, ids.emp(5), day, 4])).toHaveLength(1);
     }));
 
   it("a lead can remove a crew member with no hours, but not one with hours", () =>
@@ -292,7 +340,7 @@ describe("turn-in and locking", () => {
 
       // Lead is locked out.
       expect(await count("update public.time_entries set hours = 1 where work_order_id = $1", [ids.wo1001])).toBe(0);
-      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(3), "2026-11-05", 2])).toMatch(
+      expect(await expectFailure(c, newEntry, [ids.wo1001, ids.emp(3), await today(), 2])).toMatch(
         /row-level security/,
       );
       expect(
@@ -351,6 +399,44 @@ describe("change orders", () => {
       expect(await count(approve, [large])).toBe(1);
       const [co] = await rows("select status, decided_by from public.change_orders where id = $1", [large]);
       expect(co).toEqual({ status: "approved", decided_by: ids.owner });
+    }));
+
+  it("change orders use half-hour steps, at most 500 hours, and need a description", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      const insert = `insert into public.change_orders (work_order_id, hours_added, description) values ($1, $2, $3)`;
+      expect(await expectFailure(c, insert, [ids.wo1001, 2.3, "x"])).toMatch(/check constraint/);
+      expect(await expectFailure(c, insert, [ids.wo1001, 500.5, "x"])).toMatch(/check constraint/);
+      expect(await expectFailure(c, insert, [ids.wo1001, 2, "  "])).toMatch(/check constraint/);
+      expect(await expectFailure(c, insert, [ids.wo1001, 2, "x".repeat(1001)])).toMatch(/check constraint/);
+      expect(await count(insert, [ids.wo1001, 2.5, "Two more desks"])).toBe(1);
+    }));
+
+  it("a lead cannot submit a change order on another lead's job or after turn-in", () =>
+    inRollback(c, async () => {
+      const insert = `insert into public.change_orders (work_order_id, hours_added, description) values ($1, 2, 'x')`;
+      await actAs(c, ids.leadA);
+      expect(await expectFailure(c, insert, [ids.wo1002])).toMatch(/row-level security/);
+      await c.query("select public.turn_in_work_order($1)", [ids.wo1001]);
+      expect(await expectFailure(c, insert, [ids.wo1001])).toMatch(/row-level security/);
+      // The office still can.
+      await actAs(c, ids.bookkeeper);
+      expect(await count(insert, [ids.wo1001])).toBe(1);
+    }));
+
+  it("quick change orders can't be denied, and the owner can deny a large one", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.owner);
+      expect(
+        await expectFailure(c, "update public.change_orders set status = 'denied' where id = $1", [
+          "60000000-0000-4000-8000-000000000001",
+        ]),
+      ).toMatch(/approved automatically/);
+      const [co] = await rows<{ status: string; decided_by: string }>(
+        "update public.change_orders set status = 'denied' where id = $1 returning status, decided_by",
+        ["60000000-0000-4000-8000-000000000002"],
+      );
+      expect(co).toEqual({ status: "denied", decided_by: ids.owner });
     }));
 
   it("the hours on a submitted change order cannot be rewritten", () =>

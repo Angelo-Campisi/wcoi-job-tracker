@@ -38,12 +38,19 @@ export default async function MyJobs({ searchParams }: { searchParams: Promise<{
   const groups = groupJobs(jobs, today);
   const isStaff = me.role !== "lead";
   const past = groups.past.slice(0, PAST_JOBS_SHOWN);
+  const pendingTotal = jobs.reduce((total, job) => total + job.pendingChangeOrders, 0);
 
   return (
     <main className={styles.page}>
       <AppHeader me={me} lockMinutes={lockMinutes} />
 
       <h1 className={styles.title}>{isStaff ? "All jobs" : "My jobs"}</h1>
+      {isStaff && pendingTotal > 0 && (
+        <Link href="/change-orders" className={styles.alert}>
+          {pendingTotal === 1 ? "1 change order is" : `${pendingTotal} change orders are`} waiting for
+          {me.role === "owner" ? " your" : " the owner's"} approval →
+        </Link>
+      )}
 
       {jobs.length === 0 ? (
         <p className={styles.empty}>
