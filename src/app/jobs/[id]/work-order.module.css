@@ -410,3 +410,22 @@
   font-weight: 700;
   color: var(--good-text);
 }
+
+.officeLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.officeLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 6px 18px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  font-size: 1.125rem;
+  font-weight: 700;
+}

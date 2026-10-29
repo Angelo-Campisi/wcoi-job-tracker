@@ -45,7 +45,22 @@ export default async function MyJobs({ searchParams }: { searchParams: Promise<{
     <main className={styles.page}>
       <AppHeader me={me} lockMinutes={lockMinutes} />
 
-      <h1 className={styles.title}>{isStaff ? "All jobs" : "My jobs"}</h1>
+      <div className={styles.titleRow}>
+        <h1 className={styles.title}>{isStaff ? "All jobs" : "My jobs"}</h1>
+        {isStaff && (
+          <div className={styles.officeLinks}>
+            <Link href="/review" className={styles.officeLink}>
+              Review
+            </Link>
+            <Link href="/office" className={styles.officeLink}>
+              Office
+            </Link>
+            <Link href="/office/work-orders/new" className={styles.officeLinkPrimary}>
+              New work order
+            </Link>
+          </div>
+        )}
+      </div>
       {isStaff && reviewTotal > 0 && (
         <Link href="/review" className={styles.alert}>
           {reviewTotal === 1 ? "1 job is" : `${reviewTotal} jobs are`} turned in and waiting for review →

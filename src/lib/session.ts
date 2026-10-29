@@ -23,3 +23,12 @@ export async function requireSession(): Promise<Session> {
   ]);
   return { supabase, me, lockMinutes: settings?.inactivity_lock_minutes ?? 5 };
 }
+
+export type StaffSession = Session & { me: NonNullable<Session["me"]> };
+
+/** For office screens: bookkeeper and owner only. Everyone else goes back home. */
+export async function requireStaffSession(): Promise<StaffSession> {
+  const session = await requireSession();
+  if (!session.me || session.me.role === "lead") redirect("/");
+  return session as StaffSession;
+}

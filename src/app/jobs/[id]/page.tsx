@@ -67,6 +67,16 @@ export default async function WorkOrderPage({
           </p>
         )}
         <StatusSteps status={wo.status} />
+        {isStaff && (
+          <div className={styles.officeLinks}>
+            <Link href={`/office/work-orders/${wo.id}/edit`} className={styles.officeLink}>
+              Edit work order
+            </Link>
+            <Link href={`/office/work-orders/${wo.id}/schedule`} className={styles.officeLink}>
+              Leads, days &amp; crew
+            </Link>
+          </div>
+        )}
       </section>
 
       {justSubmitted === "quick" && (

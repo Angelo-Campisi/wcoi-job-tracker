@@ -11,7 +11,7 @@ change orders, punch lists, photos, and (later) QuickBooks Online sync.
 | Phase | What | Status |
 |-------|------|--------|
 | 0 | Setup: repo, spec, fake data, tests | Done (accounts pending) |
-| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, My Jobs, Work Order, hours entry, change orders, turn-in, and bookkeeper review done |
+| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, My Jobs, Work Order, hours entry, change orders, turn-in, bookkeeper review, and office setup done |
 | 2 | Documents, photos, punch lists, change orders | Not started |
 | 3 | Offline and sync | Not started |
 | 4 | QuickBooks sandbox | Not started |
@@ -139,3 +139,20 @@ or owner can **Fix hours**, **Send back to lead** (reopens the job and removes t
 signature), or **Approve hours**. Approving locks hours and change orders for everyone
 until **Undo approval**; approved jobs are what Phase 4 will send to QuickBooks.
 Approval waits until every large change order is decided.
+
+## Office setup
+
+Bookkeeper and owner only (`/office`, linked from All Jobs):
+
+- **New work order / Edit work order** (`src/app/office/work-orders/`): job details,
+  Ship To and Bill To, line items (labor lines carry budget hours), special
+  instructions. Job type is automatic unless overridden. Open jobs with no hours can
+  be deleted. Line items lock once a job is approved.
+- **Leads, days & crew** (from the work order): add a lead, pick their days, set the crew.
+- **People** (`/office/people`): add employees with a starting wage, add raises with a
+  start date, give a sign-in (lead, bookkeeper, owner) with a unique 6-digit PIN, reset
+  PINs, turn people off. Only the owner can create or change owners, and there's
+  always at least one active owner.
+- **Settings** (`/office/settings`): daily hours warning, large change order limit,
+  screen lock, PIN rules. The company time zone is a setup step (`COMPANY_TIME_ZONE`
+  plus `settings.company_time_zone`), not on this screen.

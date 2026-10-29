@@ -522,6 +522,136 @@ describe("bookkeeper review", () => {
     }));
 });
 
+describe("office setup", () => {
+  it("the office creates a work order with lines, assigns a lead and days, and adds crew", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.bookkeeper);
+      const [wo] = await rows<{ id: string }>(
+        `insert into public.work_orders (order_date, ship_to_company, ship_to_address) values ('2026-11-10', 'New Customer', '1 Main St') returning id`,
+      );
+      await c.query(
+        `insert into public.work_order_lines (work_order_id, line_number, description, quantity, is_labor)
+         values ($1, 1, 'Install desks', 12, true), ($1, 2, 'Fuel surcharge', 1, false)`,
+        [wo.id],
+      );
+      const [a] = await rows<{ id: string }>(
+        "insert into public.job_assignments (work_order_id, lead_user_id) values ($1, $2) returning id",
+        [wo.id, ids.leadB],
+      );
+      await c.query("insert into public.job_assignment_dates (assignment_id, work_date) values ($1, '2026-11-10')", [a.id]);
+      await c.query("insert into public.job_crew (work_order_id, employee_id) values ($1, $2)", [wo.id, ids.emp(5)]);
+      // The lead now sees it.
+      await actAs(c, ids.leadB);
+      expect(await count("select 1 from public.work_orders where id = $1", [wo.id])).toBe(1);
+      // Leads can't create work orders or assign themselves.
+      expect(await expectFailure(c, "insert into public.work_orders (order_date) values ('2026-11-10')")).toMatch(/row-level security/);
+      expect(
+        await expectFailure(c, "insert into public.job_assignments (work_order_id, lead_user_id) values ($1, $2)", [ids.wo1001, ids.leadB]),
+      ).toMatch(/row-level security/);
+    }));
+
+  it("line items are replaced in one step, office only", () =>
+    inRollback(c, async () => {
+      const lines = JSON.stringify([
+        { line_number: 1, description: "Install desks", quantity: 10, is_labor: true },
+        { line_number: 2, description: "Fuel", quantity: 1, is_labor: false },
+      ]);
+      await actAs(c, ids.bookkeeper);
+      await c.query("select public.replace_work_order_lines($1, $2::jsonb)", [ids.wo1001, lines]);
+      const r = await rows<{ description: string }>(
+        "select description from public.work_order_lines where work_order_id = $1 order by line_number",
+        [ids.wo1001],
+      );
+      expect(r.map((x) => x.description)).toEqual(["Install desks", "Fuel"]);
+      // A bad line undoes the whole save.
+      const bad = JSON.stringify([{ line_number: 1, description: "Ok", quantity: 1, is_labor: true }, { line_number: 1, description: "Dup", quantity: 1, is_labor: true }]);
+      expect(await expectFailure(c, "select public.replace_work_order_lines($1, $2::jsonb)", [ids.wo1001, bad])).toMatch(/duplicate key/);
+      expect(await count("select 1 from public.work_order_lines where work_order_id = $1", [ids.wo1001])).toBe(2);
+      await actAs(c, ids.leadA);
+      expect(await expectFailure(c, "select public.replace_work_order_lines($1, $2::jsonb)", [ids.wo1001, lines])).toMatch(/row-level security/);
+    }));
+
+  it("the lead on a job must have an active sign-in", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.owner);
+      await c.query("update public.app_users set active = false where id = $1", [ids.leadB]);
+      expect(
+        await expectFailure(c, "insert into public.job_assignments (work_order_id, lead_user_id) values ($1, $2)", [ids.wo1001, ids.leadB]),
+      ).toMatch(/active sign-in/);
+    }));
+
+  it("only open work orders can be deleted, and not ones with hours", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.bookkeeper);
+      const [wo] = await rows<{ id: string }>("insert into public.work_orders (order_date) values ('2026-11-10') returning id");
+      expect(await count("delete from public.work_orders where id = $1", [wo.id])).toBe(1);
+      expect(await expectFailure(c, "delete from public.work_orders where id = $1", [ids.wo1002])).toMatch(/has hours, so it can't be deleted/);
+      await actAs(c, ids.leadB);
+      await c.query(turnInNoSignature, [ids.wo1003, "Customer left"]);
+      await actAs(c, ids.bookkeeper);
+      expect(await expectFailure(c, "delete from public.work_orders where id = $1", [ids.wo1003])).toMatch(/Only an open work order/);
+    }));
+
+  it("line items lock once the job is approved", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadB);
+      await c.query(turnInNoSignature, [ids.wo1003, "Customer left"]);
+      await actAs(c, ids.bookkeeper);
+      await c.query("select public.approve_work_order($1)", [ids.wo1003]);
+      expect(
+        await expectFailure(c, "update public.work_order_lines set quantity = 99 where work_order_id = $1", [ids.wo1003]),
+      ).toMatch(/approved, so it is locked/);
+    }));
+
+  it("the office adds people, wages, and sign-ins; leads can't", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.bookkeeper);
+      const [e] = await rows<{ id: string }>("insert into public.employees (name) values ('New Hire') returning id");
+      await c.query("insert into public.employee_wages (employee_id, hourly_wage, effective_from) values ($1, 23, '2026-11-01')", [e.id]);
+      const [u] = await rows<{ id: string }>("insert into public.app_users (employee_id, role) values ($1, 'lead') returning id", [e.id]);
+      await c.query("select public.set_user_pin($1, '135790')", [u.id]);
+      await actAs(c, "service_role");
+      expect((await rows("select * from public.sign_in_with_pin('135790', 'd', 'ip')"))[0]).toMatchObject({ result: "ok", user_id: u.id });
+      await actAs(c, ids.leadA);
+      expect(await expectFailure(c, "insert into public.employees (name) values ('Sneaky')")).toMatch(/row-level security/);
+      expect(await rows("select * from public.employee_wages")).toEqual([]);
+    }));
+
+  it("the bookkeeper can't make or change owners, even by turning off their employee record", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.bookkeeper);
+      expect(await count("update public.app_users set role = 'lead' where id = $1", [ids.owner])).toBe(0);
+      expect(await expectFailure(c, "update public.app_users set role = 'owner' where id = $1", [ids.leadA])).toMatch(/row-level security/);
+      expect(await expectFailure(c, "update public.employees set active = false where id = $1", [ids.emp(8)])).toMatch(
+        /Only the owner can turn off an owner/,
+      );
+    }));
+
+  it("there's always at least one active owner", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.owner);
+      expect(await expectFailure(c, "update public.app_users set active = false where id = $1", [ids.owner])).toMatch(
+        /at least one active owner/,
+      );
+      expect(await expectFailure(c, "update public.app_users set role = 'bookkeeper' where id = $1", [ids.owner])).toMatch(
+        /at least one active owner/,
+      );
+      // With a second owner, the first can step down.
+      await c.query("update public.app_users set role = 'owner' where id = $1", [ids.bookkeeper]);
+      expect(await count("update public.app_users set role = 'bookkeeper' where id = $1", [ids.owner])).toBe(1);
+    }));
+
+  it("turning off an employee turns off their sign-in", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.bookkeeper);
+      await c.query("update public.employees set active = false where id = $1", [ids.emp(2)]);
+      const [u] = await rows<{ active: boolean }>("select active from public.app_users where id = $1", [ids.leadB]);
+      expect(u.active).toBe(false);
+      await actAs(c, "service_role");
+      expect((await rows<{ result: string }>("select * from public.sign_in_with_pin('222222', 'd', 'ip')"))[0].result).toBe("inactive");
+    }));
+});
+
 describe("change orders", () => {
   it("the database decides quick vs. large from the threshold (4 hours)", () =>
     inRollback(c, async () => {

@@ -180,3 +180,36 @@
   font-size: 1.25rem;
   font-weight: 700;
 }
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.officeLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.officeLink,
+.officeLinkPrimary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 6px 18px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.officeLinkPrimary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}

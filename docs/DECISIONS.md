@@ -138,7 +138,7 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - **Not built yet:** undoing a turn-in (office "reopen"), and the bookkeeper review /
   approval step (spec 6.5), which is the next Phase 1 piece.
 
-## Bookkeeper review (Phase 1, 2026-10-29) – to confirm with the owner
+## Bookkeeper review (Phase 1, 2026-10-29) – confirmed by the owner 2026-10-29
 
 - **All turned-in jobs are reviewed**, hourly and quoted. Hourly jobs show "Billable
   hours"; quoted jobs also show budget vs. actual. Both show labor cost.
@@ -151,3 +151,17 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - **Send back to lead** reopens a turned-in job. The customer's signature is removed,
   since the job may change, and the lead turns it in again with a new signature.
 - **Who:** the bookkeeper and the owner can both approve.
+
+## Office setup (Phase 1, 2026-10-29) – to confirm with the owner
+
+- **Who:** the bookkeeper and owner, from the Office button on All Jobs.
+- **A work order needs** an order date, a customer, and the job site address
+  (leads need it to find the job). Everything else is optional.
+- **Any active sign-in can lead a job**, including the owner or bookkeeper.
+- **Deleting** is only for open work orders with no hours. Anything else stays as a record.
+- **Line items lock** once a job's hours are approved (they set the budget).
+- **Turning off an employee** also turns off their sign-in. Only the owner can turn
+  off an owner, and there must always be at least one active owner.
+- **Wages:** a raise is a new line with a start date, so past labor cost never changes.
+- **Time zone** isn't on the Settings screen: changing it needs both the app setting
+  and the database setting changed together. The company is in Omaha (Central).
