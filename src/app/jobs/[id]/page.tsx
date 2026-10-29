@@ -42,7 +42,9 @@ export default async function WorkOrderPage({
 
   const isStaff = me.role !== "lead";
   const isOwner = me.role === "owner";
-  const canChange = isStaff || wo.status === "open";
+  // Approved (or sent) jobs are locked for everyone until the approval is undone.
+  const approvedLock = wo.status === "approved" || wo.status === "sent";
+  const canChange = !approvedLock && (isStaff || wo.status === "open");
   const today = companyToday();
 
   return (
@@ -95,12 +97,16 @@ export default async function WorkOrderPage({
       <Budget wo={wo} isStaff={isStaff} />
 
       <Section title="Hours">
-        {isStaff || wo.status === "open" ? (
+        {canChange ? (
           <Link href={`/jobs/${wo.id}/hours`} className={styles.enterHours}>
             {isStaff ? "Enter hours" : "Enter today's hours"}
           </Link>
         ) : (
-          <p className={styles.lockedNote}>Turned in: hours are locked. Ask the office if something needs fixing.</p>
+          <p className={styles.lockedNote}>
+            {approvedLock
+              ? "Approved: hours are locked. Undo the approval on the review screen to change them."
+              : "Turned in: hours are locked. Ask the office if something needs fixing."}
+          </p>
         )}
         {wo.hoursDays.length === 0 ? (
           <p className={styles.muted}>No hours entered yet.</p>
@@ -221,6 +227,17 @@ export default async function WorkOrderPage({
               <p className={styles.lockedNote}>No customer signature: {wo.turnIn.note}</p>
             ) : (
               wo.turnIn.signedName && <p>Signed by {wo.turnIn.signedName}.</p>
+            )}
+            {wo.approval.at && (
+              <p className={styles.approved}>
+                Hours approved {formatDateTime(wo.approval.at)}
+                {wo.approval.by ? ` by ${wo.approval.by}` : ""}.
+              </p>
+            )}
+            {isStaff && (wo.status === "turned_in" || wo.status === "approved") && (
+              <Link href={`/review/${wo.id}`} className={styles.enterHours}>
+                {wo.status === "turned_in" ? "Review hours" : "Open review"}
+              </Link>
             )}
           </>
         ) : canChange ? (

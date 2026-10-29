@@ -1,0 +1,233 @@
+/* Office screens: also used on tablets, so the same big targets. */
+
+.page {
+  min-height: 100dvh;
+  padding: 24px 16px 64px;
+  max-width: 1100px;
+  margin: 0 auto;
+  font-size: 1.1875rem;
+}
+
+.titleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.title {
+  margin-top: 20px;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.titleRow .title {
+  margin-top: 0;
+}
+
+.status {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.muted {
+  opacity: 0.75;
+}
+
+.link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.section {
+  margin-top: 28px;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--line);
+}
+
+.cards {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  padding: 18px;
+  border-radius: 14px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: inherit;
+}
+
+.card:active {
+  background: var(--pressed);
+}
+
+.cardTitle {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.warnText {
+  color: var(--warn-text);
+  font-weight: 700;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.grid th,
+.grid td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.grid thead th {
+  font-size: 1rem;
+}
+
+.num,
+.total,
+.flagged {
+  text-align: right !important;
+}
+
+.total {
+  font-weight: 700;
+}
+
+.flagged {
+  background: var(--notice-bg);
+  color: var(--notice-fg);
+  font-weight: 700;
+}
+
+.flagMark {
+  font-size: 0.9375rem;
+}
+
+.grid tfoot th,
+.grid tfoot td {
+  border-top: 2px solid var(--foreground);
+}
+
+.flagNote {
+  margin-top: 10px;
+  color: var(--warn-text);
+  font-weight: 700;
+}
+
+.tone_good {
+  color: var(--good-text);
+}
+
+.tone_warn {
+  color: var(--warn-text);
+}
+
+.tone_bad {
+  color: var(--bad-text);
+}
+
+.list {
+  margin-left: 24px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.blockers {
+  margin-left: 24px;
+  color: var(--warn-text);
+  font-weight: 700;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.primary,
+.secondary,
+.danger {
+  display: inline-flex;
+  align-items: center;
+  min-height: 60px;
+  padding: 10px 28px;
+  border-radius: 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.secondary {
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.danger {
+  border: 2px solid var(--bad);
+  background: var(--bad);
+  color: #ffffff;
+}
+
+.primary:disabled,
+.secondary:disabled,
+.danger:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.confirm {
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 3px solid var(--accent);
+}
+
+.confirmText {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.error {
+  color: var(--error-fg);
+  font-weight: 700;
+}

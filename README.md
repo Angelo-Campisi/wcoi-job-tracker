@@ -11,7 +11,7 @@ change orders, punch lists, photos, and (later) QuickBooks Online sync.
 | Phase | What | Status |
 |-------|------|--------|
 | 0 | Setup: repo, spec, fake data, tests | Done (accounts pending) |
-| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, My Jobs, Work Order, hours entry, change orders, and turn-in done |
+| 1 | Core app (sign-in, jobs, hours, budgets, turn-in) | Hours/budget math, database, PIN sign-in, My Jobs, Work Order, hours entry, change orders, turn-in, and bookkeeper review done |
 | 2 | Documents, photos, punch lists, change orders | Not started |
 | 3 | Offline and sync | Not started |
 | 4 | QuickBooks sandbox | Not started |
@@ -129,3 +129,13 @@ jobs; never budget or dollars) and a signature box. If the customer can't sign, 
 lead gives a reason instead. One more "Yes, turn it in" and the job locks: the lead
 can no longer change hours, crew, or change orders. The signature is stored in the
 database (`work_order_signatures`) in the same step as the turn-in.
+
+## Bookkeeper review
+
+Turned-in jobs wait on **Review** (`/review`, linked from a banner on All Jobs). Each
+job's review screen shows every hour in one grid (people × days, with totals and the
+over-8-hours flags), budget vs. actual, labor cost, and change orders. The bookkeeper
+or owner can **Fix hours**, **Send back to lead** (reopens the job and removes the
+signature), or **Approve hours**. Approving locks hours and change orders for everyone
+until **Undo approval**; approved jobs are what Phase 4 will send to QuickBooks.
+Approval waits until every large change order is decided.

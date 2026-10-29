@@ -434,6 +434,94 @@ describe("turn-in and locking", () => {
     }));
 });
 
+describe("bookkeeper review", () => {
+  const approve = "select status, approved_by from public.approve_work_order($1)";
+  const pendingCo = "60000000-0000-4000-8000-000000000002";
+  const pastEntry = "50000000-0000-4000-8000-000000000003";
+
+  it("only the office approves, only turned-in jobs, and not with a change order waiting", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.bookkeeper);
+      expect(await expectFailure(c, approve, [ids.wo1001])).toMatch(/still waiting for the owner/);
+      await actAs(c, ids.owner);
+      await c.query("update public.change_orders set status = 'denied' where id = $1", [pendingCo]);
+      await actAs(c, ids.bookkeeper);
+      expect(await expectFailure(c, approve, [ids.wo1001])).toMatch(/Only a turned-in job/);
+
+      await actAs(c, ids.leadA);
+      await c.query(turnInNoSignature, [ids.wo1001, "Customer left"]);
+      expect(await expectFailure(c, approve, [ids.wo1001])).toMatch(/Only the bookkeeper or owner/);
+
+      await actAs(c, ids.bookkeeper);
+      expect((await rows(approve, [ids.wo1001]))[0]).toEqual({ status: "approved", approved_by: ids.bookkeeper });
+    }));
+
+  it("approved jobs are locked for everyone until the approval is undone", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadB);
+      await c.query(turnInNoSignature, [ids.wo1002, "Customer left"]);
+      await actAs(c, ids.owner);
+      await c.query("select public.approve_work_order($1)", [ids.wo1002]);
+      const hourlyEntry = "50000000-0000-4000-8000-000000000006";
+      const locked = /has been approved, so it is locked/;
+      expect(await expectFailure(c, "update public.time_entries set hours = 5 where id = $1", [hourlyEntry])).toMatch(locked);
+      expect(await expectFailure(c, "delete from public.time_entries where id = $1", [hourlyEntry])).toMatch(locked);
+      expect(
+        await expectFailure(c, "insert into public.change_orders (work_order_id, hours_added, description) values ($1, 2, 'x')", [
+          ids.wo1002,
+        ]),
+      ).toMatch(locked);
+      expect(await expectFailure(c, "select public.reopen_work_order($1)", [ids.wo1002])).toMatch(/Undo the approval first/);
+
+      await actAs(c, ids.bookkeeper);
+      const [back] = await rows<{ status: string; approved_by: string | null }>(
+        "select status, approved_by from public.unapprove_work_order($1)",
+        [ids.wo1002],
+      );
+      expect(back).toEqual({ status: "turned_in", approved_by: null });
+      expect(await count("update public.time_entries set hours = 5 where id = $1", [hourlyEntry])).toBe(1);
+    }));
+
+  it("reopening sends the job back to the lead and removes the old signature", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadA);
+      await c.query(turnInSigned, [ids.wo1001, "Sam Placeholder", SIGNATURE]);
+      expect(await expectFailure(c, "select public.reopen_work_order($1)", [ids.wo1001])).toMatch(/Only the bookkeeper or owner/);
+      await actAs(c, ids.bookkeeper);
+      const [wo] = await rows<{ status: string; turned_in_at: string | null; customer_signed_name: string | null }>(
+        "select status, turned_in_at, customer_signed_name from public.reopen_work_order($1)",
+        [ids.wo1001],
+      );
+      expect(wo).toEqual({ status: "open", turned_in_at: null, customer_signed_name: null });
+      expect(await count("select 1 from public.work_order_signatures where work_order_id = $1", [ids.wo1001])).toBe(0);
+      // The lead can work on it again (today's hours).
+      const day = await today();
+      await actAs(c, ids.leadA);
+      expect(await rows(newEntry, [ids.wo1001, ids.emp(3), day, 4])).toHaveLength(1);
+      // Past days still go through the office.
+      expect(await expectFailure(c, "update public.time_entries set hours = 1 where id = $1", [pastEntry])).toMatch(
+        /only enter hours for today/,
+      );
+    }));
+
+  it("each review step is in the audit log", () =>
+    inRollback(c, async () => {
+      await actAs(c, ids.leadB);
+      await c.query(turnInNoSignature, [ids.wo1003, "Customer left"]);
+      await actAs(c, ids.bookkeeper);
+      await c.query("select public.approve_work_order($1)", [ids.wo1003]);
+      const log = await rows<{ status: string; changed_by: string }>(
+        `select new_data->>'status' as status, changed_by from public.audit_log
+         where table_name = 'work_orders' and record_id = $1 order by id`,
+        [ids.wo1003],
+      );
+      expect(log.slice(-2)).toEqual([
+        { status: "turned_in", changed_by: ids.leadB },
+        { status: "approved", changed_by: ids.bookkeeper },
+      ]);
+    }));
+});
+
 describe("change orders", () => {
   it("the database decides quick vs. large from the threshold (4 hours)", () =>
     inRollback(c, async () => {

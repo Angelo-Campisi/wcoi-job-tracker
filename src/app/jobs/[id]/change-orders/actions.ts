@@ -31,6 +31,7 @@ export async function createChangeOrder(
     .select("type")
     .single();
   if (error) {
+    if (error.code === "P0001") return { ok: false, error: error.message };
     if (error.code === "42501") {
       return { ok: false, error: "This job has been turned in, so change orders go through the office now." };
     }

@@ -30,7 +30,8 @@ export default async function NewChangeOrderPage({ params }: { params: Promise<{
     supabase.from("settings").select("large_change_order_threshold_hours").maybeSingle(),
   ]);
   if (!wo) notFound();
-  const canSubmit = me.role !== "lead" || wo.status === "open";
+  const approved = wo.status === "approved" || wo.status === "sent";
+  const canSubmit = !approved && (me.role !== "lead" || wo.status === "open");
 
   return (
     <main className={styles.page}>
@@ -50,7 +51,9 @@ export default async function NewChangeOrderPage({ params }: { params: Promise<{
         />
       ) : (
         <p className={styles.locked}>
-          This job has been turned in, so change orders go through the office now.{" "}
+          {approved
+            ? "This job's hours have been approved, so it's locked. Undo the approval to add a change order."
+            : "This job has been turned in, so change orders go through the office now."}{" "}
           <Link href={`/jobs/${id}`}>Back to the work order</Link>
         </p>
       )}

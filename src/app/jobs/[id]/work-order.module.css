@@ -404,3 +404,9 @@
   margin-top: 6px;
   font-weight: 600;
 }
+
+.approved {
+  margin: 12px 0;
+  font-weight: 700;
+  color: var(--good-text);
+}

@@ -136,7 +136,9 @@ export default function HoursForm({
 
       {locked && (
         <p className={styles.locked} role="status">
-          This job has been turned in, so hours are locked. Ask the office if something needs fixing.
+          {day.status === "approved" || day.status === "sent"
+            ? "These hours have been approved, so they're locked. Undo the approval on the review screen to change them."
+            : "This job has been turned in, so hours are locked. Ask the office if something needs fixing."}
         </p>
       )}
 

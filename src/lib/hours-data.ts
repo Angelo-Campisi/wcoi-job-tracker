@@ -99,7 +99,8 @@ export async function loadHoursDay(supabase: Supabase, me: Me, workOrderId: stri
     workOrderId: row.id,
     customer: row.ship_to_company || row.bill_to_company,
     status: row.status,
-    canEdit: me.role !== "lead" || row.status === "open",
+    // Approved or sent jobs are locked for everyone (undo the approval to change hours).
+    canEdit: (me.role !== "lead" || row.status === "open") && row.status !== "approved" && row.status !== "sent",
     canPickDay: me.role !== "lead",
     date,
     week,

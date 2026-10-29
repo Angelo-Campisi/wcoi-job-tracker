@@ -51,6 +51,9 @@ export interface WorkOrderDetail {
     /** Why there's no signature, when the customer couldn't sign. */
     note: string | null;
   };
+  approval: { at: string | null; by: string | null };
+  /** Hours entries flagged for review (sync conflicts, Phase 3). Approval waits for these. */
+  needsReviewEntries: number;
   /** Bookkeeper and owner only; always null for leads. */
   laborCost: LaborCostResult | null;
 }
@@ -69,7 +72,8 @@ export async function loadWorkOrder(supabase: Supabase, me: Me, id: string): Pro
         `id, quote_number, po_number, order_date, status, job_type_override, notes,
         bill_to_company, bill_to_contact, bill_to_phone,
         ship_to_company, ship_to_address, ship_to_contact, ship_to_phone,
-        turned_in_at, customer_signed_name, turn_in_note,
+        turned_in_at, customer_signed_name, turn_in_note, approved_at,
+        approved_user:app_users!work_orders_approved_by_fkey (employees (name)),
         work_order_signatures (image_png),
         turned_in_user:app_users!work_orders_turned_in_by_fkey (employees (name)),
         work_order_lines (line_number, description, quantity, is_labor),
@@ -78,7 +82,7 @@ export async function loadWorkOrder(supabase: Supabase, me: Me, id: string): Pro
         change_orders (id, type, status, hours_added, description, requested_at, decided_at,
           requester:app_users!change_orders_requested_by_fkey (employees (name)),
           decider:app_users!change_orders_decided_by_fkey (employees (name))),
-        time_entries (id, employee_id, work_date, hours, entered_by, employees (name))`,
+        time_entries (id, employee_id, work_date, hours, entered_by, needs_review, employees (name))`,
       )
       .eq("id", id)
       .maybeSingle(),
@@ -175,6 +179,11 @@ export async function loadWorkOrder(supabase: Supabase, me: Me, id: string): Pro
       signature: (one(row.work_order_signatures)?.image_png as string) ?? null,
       note: row.turn_in_note,
     },
+    approval: {
+      at: row.approved_at,
+      by: (one(one(row.approved_user)?.employees)?.name as string) ?? null,
+    },
+    needsReviewEntries: row.time_entries.filter((t) => t.needs_review).length,
     laborCost,
   };
 }

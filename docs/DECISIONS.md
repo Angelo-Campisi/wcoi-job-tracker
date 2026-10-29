@@ -121,7 +121,7 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
 - **Email to the owner (decision 3) is not built yet.** It needs an email service;
   for now the in-app banner is the alert.
 
-## Turn-in (Phase 1, 2026-10-29) – to confirm with the owner
+## Turn-in (Phase 1, 2026-10-29) – confirmed by the owner 2026-10-29
 
 - **Signature capture is in now** (the spec listed it for Phase 2), because turn-in
   starts with the customer signing. The customer signs with a finger in a white box;
@@ -137,3 +137,17 @@ Approved by the owner on 2026-10-28 ("use your suggestions").
   documents (Phase 2) will use file storage.
 - **Not built yet:** undoing a turn-in (office "reopen"), and the bookkeeper review /
   approval step (spec 6.5), which is the next Phase 1 piece.
+
+## Bookkeeper review (Phase 1, 2026-10-29) – to confirm with the owner
+
+- **All turned-in jobs are reviewed**, hourly and quoted. Hourly jobs show "Billable
+  hours"; quoted jobs also show budget vs. actual. Both show labor cost.
+- **One grid** of hours (people down the side, days across, totals both ways), with
+  days over 8 hours across all jobs highlighted.
+- **Approve locks the job for everyone**, office included, so what goes to QuickBooks
+  matches what was approved. "Undo approval" unlocks it (until it's been sent).
+- **Approval waits for change orders**: every large change order must be approved or
+  denied by the owner first.
+- **Send back to lead** reopens a turned-in job. The customer's signature is removed,
+  since the job may change, and the lead turns it in again with a new signature.
+- **Who:** the bookkeeper and the owner can both approve.
